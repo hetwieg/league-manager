@@ -1,0 +1,12 @@
+name: Onderdelen
+description: Een kaal template voor interne onderelen
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Voor als je een kaal issu will
+  - type: textarea
+    id: content
+    attributes:
+      label: Issue Content
+      description: Add the content of the issue here.
