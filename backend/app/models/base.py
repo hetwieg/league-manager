@@ -9,6 +9,7 @@ from uuid import UUID as RowId
 class BaseSQLModel(SQLModel):
     pass
 
+
 # endregion
 
 # region Generic message #######################################################
