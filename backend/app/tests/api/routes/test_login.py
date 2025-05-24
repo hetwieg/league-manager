@@ -68,7 +68,9 @@ def test_recovery_password_user_not_exits(
         f"{settings.API_V1_STR}/password-recovery/{email}",
         headers=normal_user_token_headers,
     )
-    assert r.status_code == 404
+    assert (
+        r.status_code == 404
+    )  # TODO: Fix testing and do not leak known emails with 404
 
 
 def test_reset_password(client: TestClient, db: Session) -> None:
@@ -81,7 +83,6 @@ def test_reset_password(client: TestClient, db: Session) -> None:
         full_name="Test User",
         password=password,
         is_active=True,
-        is_superuser=False,
     )
     user = User.create(session=db, create_obj=user_create)
     token = generate_password_reset_token(email=email)
