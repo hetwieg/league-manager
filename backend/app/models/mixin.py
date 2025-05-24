@@ -19,11 +19,15 @@ class IsVerified(BaseModel):
 
 
 class UserName(BaseModel):
-    username: str | None = Field(default=None, nullable=True, unique=True, max_length=255)
+    username: str | None = Field(
+        default=None, nullable=True, unique=True, max_length=255
+    )
 
 
 class Email(BaseModel):
-    email: EmailStr | None = Field(default=None, nullable=True, unique=True, max_length=255)
+    email: EmailStr | None = Field(
+        default=None, nullable=True, unique=True, max_length=255
+    )
 
 
 class EmailUpdate(Email):
@@ -37,6 +41,7 @@ class ScoutingId(BaseModel):
 class Password(BaseModel):
     password: str = Field(min_length=8, max_length=100)
 
+
 class PasswordUpdate(Password):
     password: str | None = Field(default=None, min_length=8, max_length=40)
 
@@ -47,6 +52,7 @@ class RowId(BaseModel):
         nullable=False,
         default_factory=uuid.uuid4,
     )
+
 
 class RowIdPublic(RowId):
     id: RowIdType

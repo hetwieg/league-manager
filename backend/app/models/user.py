@@ -24,7 +24,7 @@ class UserBase(
     mixin.ScoutingId,
     mixin.IsActive,
     mixin.IsVerified,
-    BaseSQLModel
+    BaseSQLModel,
 ):
     pass
 
@@ -116,6 +116,28 @@ class UserPublic(mixin.RowIdPublic, UserBase):
 class UsersPublic(BaseSQLModel):
     data: list[UserPublic]
     count: int
+
+
+# endregion
+
+
+# region Password manager ######################################################
+
+
+# JSON payload containing access token
+class Token(BaseSQLModel):
+    access_token: str
+    token_type: str = "bearer"
+
+
+# Contents of JWT token
+class TokenPayload(BaseSQLModel):
+    sub: str | None = None
+
+
+class NewPassword(BaseSQLModel):
+    token: str
+    new_password: str = Field(min_length=8, max_length=40)
 
 
 # endregion
