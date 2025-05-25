@@ -6,12 +6,16 @@ from sqlmodel import Field
 from .base import RowId as RowIdType
 
 
+class Name(BaseModel):
+    name: str | None = Field(default=None, nullable=False, unique=True, max_length=255)
+
+
 class FullName(BaseModel):
     full_name: str | None = Field(default=None, nullable=True, max_length=255)
 
 
 class IsActive(BaseModel):
-    is_active: bool | None = Field(default=False, nullable=False)
+    is_active: bool | None = Field(default=True, nullable=False)
 
 
 class IsVerified(BaseModel):
@@ -56,3 +60,7 @@ class RowId(BaseModel):
 
 class RowIdPublic(RowId):
     id: RowIdType
+
+
+class Description(BaseModel):
+    description: str | None = Field(default=None, nullable=True, max_length=512)

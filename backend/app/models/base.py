@@ -1,7 +1,16 @@
+from enum import IntFlag, Enum  # Python 3.11 >= StrEnum
+from enum import auto as auto_enum
+
 from sqlmodel import SQLModel
 
 from uuid import UUID as RowId
-
+__all__ = [
+    'RowId',
+    'DocumentedStrEnum',
+    'DocumentedIntFlag',
+    'auto_enum',
+    'BaseSQLModel',
+]
 
 # region SQLModel base class ###################################################
 
@@ -11,6 +20,21 @@ class BaseSQLModel(SQLModel):
 
 
 # endregion
+
+
+# region enum # Fields #########################################################
+
+
+class DocumentedStrEnum(str, Enum):
+    pass
+
+
+class DocumentedIntFlag(IntFlag):
+    pass
+
+
+# endregion
+
 
 # region Generic message #######################################################
 

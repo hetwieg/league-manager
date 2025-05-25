@@ -1,8 +1,18 @@
+from sqlalchemy.sql import roles, roles
 from sqlmodel import Session, create_engine, select
 
 from app.core.config import settings
 
-from app.models.user import User, UserCreate
+from app.models.user import (
+    User,
+    UserCreate,
+    Role,
+    Permission,
+    PermissionModule,
+    PermissionPart,
+    PermissionRight,
+    RolePermissionLink,
+)
 
 engine = create_engine(str(settings.SQLALCHEMY_DATABASE_URI))
 
@@ -21,6 +31,64 @@ def init_db(session: Session) -> None:
     # This works because the models are already imported and registered from app.models
     BaseSQLModel.metadata.create_all(engine)
 
+    # region SuperUser ---------------------------------------------------------
+
+    # Create system admin role
+    system_admin_role = session.exec(select(Role).where(Role.name == "Admin")).first()
+    if not system_admin_role:
+        system_admin_role_in = Role(
+            name="Admin",
+            is_active=True,
+            description="Super admins",
+        )
+        system_admin_role = Role.create(
+            session=session, create_obj=system_admin_role_in
+        )
+
+    user_role = session.exec(select(Role).where(Role.name == "User")).first()
+    if not user_role:
+        user_role_in = Role(
+            name="User",
+            is_active=True,
+            description="Role with only healthcheck read rights",
+        )
+        user_role = Role.create(session=session, create_obj=user_role_in)
+
+    # init all possible permissions
+    existing_permissions = session.exec(select(Permission)).all()
+
+    # Create missing permissions and link to system admin role
+    for module in PermissionModule:
+        for part in PermissionPart:
+            permission = next(
+                filter(
+                    lambda p: p.module == module and p.part == part,
+                    existing_permissions,
+                ),
+                None,
+            )
+            if not permission:
+                permission_in = Permission(
+                    module=module,
+                    part=part,
+                    is_active=True,
+                    description=f"{module.name} - {part.name}",
+                )
+                permission = Permission.create(
+                    session=session, create_obj=permission_in
+                )
+
+            system_admin_role.add_permission(
+                permission, session=session, right=PermissionRight.ADMIN
+            )
+
+            if module == PermissionModule.SYSTEM and part == PermissionPart.HEALTHCHECK:
+                user_role.add_permission(
+                    permission, session=session, right=PermissionRight.READ
+                )
+
+    session.commit()
+
     user = session.exec(
         select(User).where(User.email == settings.FIRST_SUPERUSER)
     ).first()
@@ -32,3 +100,6 @@ def init_db(session: Session) -> None:
             is_active=True,
         )
         user = User.create(session=session, create_obj=user_in)
+    user.add_role(db_obj=system_admin_role, session=session)
+
+    # endregion

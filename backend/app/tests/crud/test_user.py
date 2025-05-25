@@ -2,7 +2,13 @@ from fastapi.encoders import jsonable_encoder
 from sqlmodel import Session
 
 from app.core.security import verify_password
-from app.models.user import User, UserCreate, UserUpdate
+from app.models.user import (
+    User,
+    UserCreate,
+    UserUpdate,
+    PermissionModule,
+    PermissionPart,
+)
 from app.tests.utils.utils import random_email, random_lower_string
 
 
@@ -43,17 +49,21 @@ def test_check_if_user_is_active(db: Session) -> None:
 def test_check_if_user_is_active_inactive(db: Session) -> None:
     email = random_email()
     password = random_lower_string()
-    user_in = UserCreate(email=email, password=password, disabled=True)
+    user_in = UserCreate(email=email, password=password, is_active=False)
     user = User.create(session=db, create_obj=user_in)
-    assert user.is_active
+    assert user.is_active is False
 
 
 def test_check_if_user_is_superuser(db: Session) -> None:
     email = random_email()
     password = random_lower_string()
-    user_in = UserCreate(email=email, password=password, is_superuser=True)
+    user_in = UserCreate(email=email, password=password)
     user = User.create(session=db, create_obj=user_in)
-    assert user.is_superuser is True
+    user.add_role(name="Admin", session=db)
+    assert (
+        user.has_permission(module=PermissionModule.SYSTEM, part=PermissionPart.ADMIN)
+        is True
+    )
 
 
 def test_check_if_user_is_superuser_normal_user(db: Session) -> None:
@@ -61,14 +71,19 @@ def test_check_if_user_is_superuser_normal_user(db: Session) -> None:
     password = random_lower_string()
     user_in = UserCreate(email=username, password=password)
     user = User.create(session=db, create_obj=user_in)
-    assert user.is_superuser is False
+    user.add_role(name="User", session=db)
+    assert (
+        user.has_permission(module=PermissionModule.SYSTEM, part=PermissionPart.ADMIN)
+        is False
+    )
 
 
 def test_get_user(db: Session) -> None:
     password = random_lower_string()
     username = random_email()
-    user_in = UserCreate(email=username, password=password, is_superuser=True)
+    user_in = UserCreate(email=username, password=password)
     user = User.create(session=db, create_obj=user_in)
+    user.add_role(name="Admin", session=db)
     user_2 = db.get(User, user.id)
     assert user_2
     assert user.email == user_2.email
@@ -78,10 +93,10 @@ def test_get_user(db: Session) -> None:
 def test_update_user(db: Session) -> None:
     password = random_lower_string()
     email = random_email()
-    user_in = UserCreate(email=email, password=password, is_superuser=True)
+    user_in = UserCreate(email=email, password=password)
     user = User.create(session=db, create_obj=user_in)
     new_password = random_lower_string()
-    user_in_update = UserUpdate(password=new_password, is_superuser=True)
+    user_in_update = UserUpdate(password=new_password)
     if user.id is not None:
         User.update(session=db, db_obj=user, in_obj=user_in_update)
     user_2 = db.get(User, user.id)
