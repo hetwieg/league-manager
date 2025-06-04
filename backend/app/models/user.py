@@ -154,12 +154,7 @@ class User(mixin.RowId, UserBase, table=True):
         return db_obj
 
     def add_role(self, *, name: str = None, id: RowId = None, db_obj: "Role" = None, session: Session) -> "User":
-        if db_obj:
-            pass
-        elif name:
-            db_obj = session.exec(select(Role).where(Role.name == name)).first()
-        elif id:
-            db_obj = session.exec(select(Role).where(Role.id == id)).first()
+        db_obj = Role.get(name=name, id=id, db_obj=db_obj, session=session)
 
         to_add = next((add for add in self.roles if add == db_obj), None)
 
@@ -170,12 +165,7 @@ class User(mixin.RowId, UserBase, table=True):
         return self
 
     def remove_role(self, *, name: str = None, id: RowId = None, db_obj: "Role" = None, session: Session) -> "User":
-        if db_obj:
-            pass
-        elif name:
-            db_obj = session.exec(select(Role).where(Role.name == name)).first()
-        elif id:
-            db_obj = session.exec(select(Role).where(Role.id == id)).first()
+        db_obj = Role.get(name=name, id=id, db_obj=db_obj, session=session)
 
         to_remove = next((remove for remove in self.roles if remove == db_obj), None)
         if to_remove:
@@ -295,6 +285,17 @@ class Role(
         session.add(db_obj)
         session.commit()
         session.refresh(db_obj)
+        return db_obj
+
+    @classmethod
+    def get(cls, *, name: str = None, id: RowId = None, db_obj: "Role" = None, session: Session) -> "Role":
+        if db_obj:
+            pass
+        elif name:
+            db_obj = session.exec(select(Role).where(Role.name == name)).first()
+        elif id:
+            db_obj = session.exec(select(Role).where(Role.id == id)).first()
+
         return db_obj
 
     def add_permission(
