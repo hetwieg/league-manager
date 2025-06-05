@@ -11,7 +11,7 @@ from app.api.deps import (
 )
 from app.core.config import settings
 from app.core.security import get_password_hash, verify_password
-from app.models.base import Message
+from app.models.base import Message, RowId
 from app.models.user import (
     UpdatePassword,
     User,
@@ -24,6 +24,13 @@ from app.models.user import (
     PermissionModule,
     PermissionPart,
     PermissionRight,
+)
+from app.models.apikey import (
+    ApiKey,
+    ApiKeyCreate,
+    ApiKeyPublic,
+    ApiKeysPublic,
+    ApiKeyGenerate,
 )
 from app.utils import generate_new_account_email, send_email
 
@@ -116,6 +123,68 @@ def update_password_me(
     session.add(current_user)
     session.commit()
     return Message(message="Password updated successfully")
+
+
+@router.get("/me/api-key", response_model=ApiKeysPublic)
+def read_apikey_me(
+    session: SessionDep, current_user: CurrentUser, skip: int = 0, limit: int = 100
+) -> Any:
+    """
+    Retrieve api keys from user
+    """
+
+    count_statement = (
+        select(func.count())
+        .select_from(ApiKey)
+        .where(ApiKey.user_id == current_user.id)
+    )
+    count = session.exec(count_statement).one()
+
+    statement = select(User).offset(skip).limit(limit)
+    api_keys = session.exec(statement).all()
+
+    return ApiKeysPublic(data=api_keys, count=count)
+
+
+@router.post("/me/api-key", response_model=ApiKeyPublic)
+def create_apikey_met(
+    *, session: SessionDep, body: ApiKeyGenerate, current_user: CurrentUser
+) -> Any:
+    """
+    Generate a new api-key.
+    """
+
+    data_obj = body.model_dump(exclude_unset=True)
+    extra_data = {
+        "user_id": current_user.id,
+    }
+    create_obj = ApiKeyCreate.model_validate(data_obj, update=extra_data)
+
+    api_key = ApiKey.create(session=session, create_obj=create_obj)
+    current_user.api_keys.append(api_key)
+    session.add(current_user)
+    session.commit()
+    return api_key
+
+
+@router.delete("/me/api-key/{api_key}", response_model=ApiKeyPublic)
+def delete_apikey_me(
+    *,
+    session: SessionDep,
+    current_user: CurrentUser,
+    api_key: RowId,
+) -> Message:
+    """
+    Delete a api-key.
+    """
+
+    for api_key in current_user.api_keys:
+        if api_key.id == api_key:
+            session.delete(api_key)
+            session.commit()
+            return Message(message="Api key deleted successfully")
+
+    raise HTTPException(status_code=404, detail="API key not found")
 
 
 @router.get("/me", response_model=UserPublic)

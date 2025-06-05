@@ -4,12 +4,14 @@ from enum import auto as auto_enum
 from sqlmodel import SQLModel
 
 from uuid import UUID as RowId
+
 __all__ = [
-    'RowId',
-    'DocumentedStrEnum',
-    'DocumentedIntFlag',
-    'auto_enum',
-    'BaseSQLModel',
+    "RowId",
+    "DocumentedStrEnum",
+    "DocumentedIntFlag",
+    "auto_enum",
+    "BaseSQLModel",
+    "Message",
 ]
 
 # region SQLModel base class ###################################################

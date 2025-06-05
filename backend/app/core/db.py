@@ -1,4 +1,3 @@
-from sqlalchemy.sql import roles, roles
 from sqlmodel import Session, create_engine, select
 
 from app.core.config import settings
@@ -11,8 +10,9 @@ from app.models.user import (
     PermissionModule,
     PermissionPart,
     PermissionRight,
-    RolePermissionLink,
 )
+
+from app.models.apikey import ApiKey
 
 engine = create_engine(str(settings.SQLALCHEMY_DATABASE_URI))
 

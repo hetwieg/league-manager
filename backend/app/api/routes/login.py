@@ -11,6 +11,7 @@ from app.core.config import settings
 from app.core.security import get_password_hash
 from app.models.base import Message
 from app.models.user import User, NewPassword, Token, UserPublic
+from app.models.apikey import ApiKey
 from app.utils import (
     generate_password_reset_token,
     generate_reset_password_email,
@@ -33,6 +34,27 @@ def login_access_token(
     )
     if not user:
         raise HTTPException(status_code=400, detail="Incorrect email or password")
+    elif not user.is_active:
+        raise HTTPException(status_code=400, detail="Inactive user")
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    return Token(
+        access_token=security.create_access_token(
+            user.id, expires_delta=access_token_expires
+        )
+    )
+
+
+@router.get("/login/api-key/{api_key}")
+def login_apikey(
+    session: SessionDep,
+    api_key: str,
+) -> Token:
+    """
+    Plain apikey compatible login, get an access token for future requests
+    """
+    user = ApiKey.authenticate(session=session, api_key=api_key)
+    if not user:
+        raise HTTPException(status_code=400, detail="Incorrect apikey")
     elif not user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)

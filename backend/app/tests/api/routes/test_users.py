@@ -165,6 +165,7 @@ def test_retrieve_users(
     assert "count" in all_users
     for item in all_users["data"]:
         assert "email" in item
+        # TODO: To be sure there are no: assert "api_keys" not in item
 
 
 def test_update_user_me(
@@ -227,6 +228,31 @@ def test_update_password_me(
 
     assert r.status_code == 200
     assert verify_password(settings.FIRST_SUPERUSER_PASSWORD, user_db.hashed_password)
+
+
+def test_generate_api_key_me(
+    client: TestClient, superuser_token_headers: dict[str, str]
+) -> None:
+    data = {"name": "Test api"}
+    r = client.post(
+        f"{settings.API_V1_STR}/users/me/api-key",
+        headers=superuser_token_headers,
+        json=data,
+    )
+    assert r.status_code == 200
+    api_key = r.json()
+    assert "api_key" in api_key
+    assert api_key["name"] == data["name"]
+    assert api_key["is_active"]
+
+
+# TODO: get api-keys
+
+# TODO: disable api-key
+
+# TODO: enable api-key
+
+# TODO: delete api-key
 
 
 def test_update_password_me_incorrect_password(

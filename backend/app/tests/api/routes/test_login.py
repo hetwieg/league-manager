@@ -6,6 +6,7 @@ from sqlmodel import Session
 from app.core.config import settings
 from app.core.security import verify_password
 from app.models.user import User, UserCreate
+from app.models.apikey import ApiKey, ApiKeyCreate
 from app.tests.utils.user import user_authentication_headers
 from app.tests.utils.utils import random_email, random_lower_string
 from app.utils import generate_password_reset_token
@@ -42,6 +43,75 @@ def test_use_access_token(
     result = r.json()
     assert r.status_code == 200
     assert "email" in result
+
+
+def test_use_api_key(client: TestClient, db: Session) -> None:
+    user_db = User.get_by_email(session=db, email=settings.FIRST_SUPERUSER)
+
+    data = {
+        "user_id": user_db.id,
+        "is_active": True,
+    }
+    create_obj = ApiKeyCreate.model_validate(data)
+
+    api_key = ApiKey.create(session=db, create_obj=create_obj)
+    # TODO: Fix user_db.api_keys.append(api_key)
+    db.add(user_db)
+    db.commit()
+
+    r = client.get(f"{settings.API_V1_STR}/login/api-key/{api_key.api_key}")
+    tokens = r.json()
+    assert r.status_code == 200
+    assert "access_token" in tokens
+    assert tokens["access_token"]
+
+
+def test_use_api_key_inactive(client: TestClient, db: Session) -> None:
+    user_db = User.get_by_email(session=db, email=settings.FIRST_SUPERUSER)
+
+    data = {
+        "user_id": user_db.id,
+        "is_active": False,
+    }
+    create_obj = ApiKeyCreate.model_validate(data)
+
+    api_key = ApiKey.create(session=db, create_obj=create_obj)
+    # TODO: Fix user_db.api_keys.append(api_key)
+    db.add(user_db)
+    db.commit()
+
+    r = client.get(f"{settings.API_V1_STR}/login/api-key/{api_key.api_key}")
+    tokens = r.json()
+    assert r.status_code == 400
+    assert "access_token" in tokens
+    assert tokens["access_token"]
+
+
+def test_use_api_key_user_inactive(client: TestClient, db: Session) -> None:
+    user_db = User.get_by_email(session=db, email=settings.FIRST_SUPERUSER)
+
+    data = {
+        "user_id": user_db.id,
+        "is_active": True,
+    }
+    create_obj = ApiKeyCreate.model_validate(data)
+
+    api_key = ApiKey.create(session=db, create_obj=create_obj)
+    # TODO: Fix user_db.api_keys.append(api_key)
+    db.add(user_db)
+    db.commit()
+
+    # TODO: set user inactive
+
+    r = client.get(f"{settings.API_V1_STR}/login/api-key/{api_key.api_key}")
+    tokens = r.json()
+    assert r.status_code == 400
+    assert "access_token" in tokens
+    assert tokens["access_token"]
+
+    # Revert to the old password to keep consistency in test
+
+    # TODO: restore user active
 
 
 def test_recovery_password(

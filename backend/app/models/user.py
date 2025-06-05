@@ -1,10 +1,8 @@
-import random
 from typing import TYPE_CHECKING
 
 from pydantic import EmailStr
 from sqlmodel import Session, Field, Relationship, select
 
-from app.core.config import settings
 from app.core.security import get_password_hash, verify_password
 
 from .base import (
@@ -16,8 +14,11 @@ from .base import (
 )
 from . import mixin
 
+if TYPE_CHECKING:
+    from .apikey import ApiKey
 
-# region User ##################################################################
+
+# region # User ################################################################
 
 
 class PermissionModule(DocumentedStrEnum):
@@ -39,7 +40,7 @@ class PermissionRight(DocumentedIntFlag):
     ADMIN = CREATE | READ | UPDATE | DELETE
 
 
-# #############################################################################
+# ##############################################################################
 # link to User (many-to-many)
 class UserRoleLink(BaseSQLModel, table=True):
     user_id: RowId | None = Field(
@@ -103,6 +104,7 @@ class User(mixin.RowId, UserBase, table=True):
     hashed_password: str
 
     # --- back_populates links -------------------------------------------------
+    api_keys: list["ApiKey"] = Relationship(back_populates="user", cascade_delete=True)
 
     # --- many-to-many links ---------------------------------------------------
     roles: list["Role"] = Relationship(back_populates="users", link_model=UserRoleLink)
@@ -215,7 +217,7 @@ class UsersPublic(BaseSQLModel):
 # endregion
 
 
-# region Password manager ######################################################
+# region # Password manager ######################################################
 
 
 # JSON payload containing access token
@@ -237,7 +239,7 @@ class NewPassword(BaseSQLModel):
 # endregion
 
 
-# region Permissions ###########################################################
+# region # Permissions ###########################################################
 
 
 # link to Roles (many-to-many)
