@@ -91,3 +91,8 @@ class Canceled(BaseModel):
     canceled_reason: str | None = Field(default=None, nullable=True, max_length=1024)
 
 
+class CheckInCheckOut(BaseModel):
+    checkin_at: datetime | None = Field(default=None, nullable=True)
+    checkout_at: datetime | None = Field(default=None, nullable=True)
+
+

@@ -256,7 +256,7 @@ def read_event_teams(
         module=PermissionModule.EVENT,
         part=PermissionPart.ADMIN,
         rights=(PermissionRight.READ | PermissionRight.MANGE_TEAMS),
-    ) and ( event and (event.user_has_right(user=current_user, rights=(PermissionRight.READ | PermissionRight.MANGE_TEAMS)))):
+    ) and ( event and (event.user_has_rights(user=current_user, rights=(PermissionRight.READ | PermissionRight.MANGE_TEAMS)))):
         raise HTTPException(status_code=400, detail="Not enough permissions")
 
     # Get list

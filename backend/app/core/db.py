@@ -14,6 +14,9 @@ from app.models.user import (
     User,
     UserCreate,
 )
+from app.models.apikey import (
+    ApiKey,
+)
 
 engine = create_engine(str(settings.SQLALCHEMY_DATABASE_URI))
 

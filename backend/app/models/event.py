@@ -49,7 +49,6 @@ class EventBase(
     mixin.Contact,
     mixin.StartEndDate,
     mixin.IsActive,
-    mixin.Contact,
     BaseSQLModel,
 ):
     pass
@@ -72,7 +71,8 @@ class Event(mixin.RowId, EventBase, table=True):
     # --- back_populates links -------------------------------------------------
 
     # --- many-to-many links ---------------------------------------------------
-    user_links: list[EventUserLink] = Relationship(back_populates="event")
+    user_links: list["EventUserLink"] = Relationship(back_populates="event")
+    team_links: list["EventTeam"] = Relationship(back_populates="event")
 
     # --- CRUD actions ---------------------------------------------------------
     @classmethod
@@ -189,7 +189,7 @@ class EventTeam(mixin.RowId, EventTeamBase, table=True):
     )
 
     # --- back_populates links -------------------------------------------------
-    event: "Event" = Relationship(back_populates="team_links", cascade_delete=True)
+    event: "Event" = Relationship(back_populates="team_links")#, cascade_delete=True)
     # team: "ScoutingTeam" = Relationship(back_populates="event_links", cascade_delete=True)
 
     # --- CRUD actions ---------------------------------------------------------

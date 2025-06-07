@@ -1,4 +1,5 @@
 import random
+from typing import TYPE_CHECKING, Optional
 
 from sqlmodel import Field, Relationship, Session, select
 
@@ -7,7 +8,9 @@ from .base import (
     BaseSQLModel,
     RowId,
 )
-from .user import User
+
+if TYPE_CHECKING:
+    from .user import User
 
 # region # API Keys for access ###################################################
 
@@ -39,7 +42,7 @@ class ApiKey(mixin.RowId, ApiKeyBase, table=True):
     api_key: str = Field(unique=True, nullable=False, max_length=64)
 
     # --- back_populates links -------------------------------------------------
-    user: User | None = Relationship(back_populates="api_keys")
+    user: "User" = Relationship(back_populates="api_keys")
 
     # --- CRUD actions ---------------------------------------------------------
     @staticmethod
