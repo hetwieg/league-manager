@@ -9,6 +9,7 @@ __all__ = [
     "DocumentedStrEnum",
     "DocumentedIntFlag",
     "auto_enum",
+    "ApiTags",
     "BaseSQLModel",
     "Message",
 ]
@@ -32,6 +33,21 @@ class DocumentedStrEnum(str, Enum):
 
 class DocumentedIntFlag(IntFlag):
     pass
+
+
+# #############################################################################
+
+
+class ApiTags(DocumentedStrEnum):
+    LOGIN = "Login"
+    USERS = "Users"
+    UTILS = "Utils"
+    PRIVATE = "Private"
+
+    APIKEY = "APIKey"
+
+    EVENTS = "Events"
+    TEAMS = "Teams"
 
 
 # endregion

@@ -4,7 +4,11 @@ from fastapi import APIRouter, HTTPException
 from sqlmodel import func, select
 
 from app.api.deps import CurrentUser, SessionDep
-from app.models.base import Message, RowId
+from app.models.base import (
+    ApiTags,
+    Message,
+    RowId,
+)
 from app.models.event import (
     Event,
     EventCreate,
@@ -21,7 +25,7 @@ from app.models.user import (
     User,
 )
 
-router = APIRouter(prefix="/events", tags=["events"])
+router = APIRouter(prefix="/events", tags=[ApiTags.EVENTS])
 
 # region # Events ##############################################################
 
@@ -160,7 +164,7 @@ def delete_event(
 # region # Events / Users ######################################################
 
 
-@router.post("/{id}/users/{user_id}", tags=["users"])
+@router.post("/{id}/users/{user_id}", tags=[ApiTags.USERS])
 def add_user_to_event(
     session: SessionDep,
     current_user: CurrentUser,
@@ -196,7 +200,7 @@ def add_user_to_event(
     )  # TODO: Return event or event_users
 
 
-@router.delete("/{id}/users/{user_id}", tags=["users"])
+@router.delete("/{id}/users/{user_id}", tags=[ApiTags.USERS])
 def remove_user_from_event(
     session: SessionDep, current_user: CurrentUser, id: RowId, user_id: RowId
 ) -> Message:
