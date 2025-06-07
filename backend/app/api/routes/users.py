@@ -2,7 +2,7 @@ import uuid
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import col, delete, func, select
+from sqlmodel import func, select
 
 from app.api.deps import (
     CurrentUser,
@@ -11,8 +11,18 @@ from app.api.deps import (
 )
 from app.core.config import settings
 from app.core.security import get_password_hash, verify_password
+from app.models.apikey import (
+    ApiKey,
+    ApiKeyCreate,
+    ApiKeyGenerate,
+    ApiKeyPublic,
+    ApiKeysPublic,
+)
 from app.models.base import Message, RowId
 from app.models.user import (
+    PermissionModule,
+    PermissionPart,
+    PermissionRight,
     UpdatePassword,
     User,
     UserCreate,
@@ -21,16 +31,6 @@ from app.models.user import (
     UsersPublic,
     UserUpdate,
     UserUpdateMe,
-    PermissionModule,
-    PermissionPart,
-    PermissionRight,
-)
-from app.models.apikey import (
-    ApiKey,
-    ApiKeyCreate,
-    ApiKeyPublic,
-    ApiKeysPublic,
-    ApiKeyGenerate,
 )
 from app.utils import generate_new_account_email, send_email
 
@@ -239,7 +239,11 @@ def read_user_by_id(
     user = session.get(User, user_id)
     if user == current_user:
         return user
-    if not current_user.has_permission(module=PermissionModule.USER, part=PermissionPart.ADMIN, rights=PermissionRight.READ):
+    if not current_user.has_permission(
+        module=PermissionModule.USER,
+        part=PermissionPart.ADMIN,
+        rights=PermissionRight.READ,
+    ):
         raise HTTPException(
             status_code=403,
             detail="The user doesn't have enough privileges",

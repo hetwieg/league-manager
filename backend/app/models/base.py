@@ -1,9 +1,8 @@
-from enum import IntFlag, Enum  # Python 3.11 >= StrEnum
+from enum import Enum, IntFlag  # Python 3.11 >= StrEnum
 from enum import auto as auto_enum
+from uuid import UUID as RowId
 
 from sqlmodel import SQLModel
-
-from uuid import UUID as RowId
 
 __all__ = [
     "RowId",

@@ -1,16 +1,13 @@
 import random
-from typing import TYPE_CHECKING
 
-from sqlmodel import Session, Field, Relationship, select
+from sqlmodel import Field, Relationship, Session, select
 
-from .base import (
-    RowId,
-    BaseSQLModel,
-)
 from . import mixin
-
+from .base import (
+    BaseSQLModel,
+    RowId,
+)
 from .user import User
-
 
 # region # API Keys for access ###################################################
 
@@ -20,6 +17,7 @@ class ApiKeyBase(mixin.IsActive, mixin.Name, BaseSQLModel):
     user_id: RowId | None = Field(
         foreign_key="user.id", nullable=False, ondelete="CASCADE"
     )
+
 
 # Properties to receive via API on creation
 class ApiKeyCreate(ApiKeyBase):

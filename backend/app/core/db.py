@@ -1,18 +1,19 @@
 from sqlmodel import Session, create_engine, select
 
 from app.core.config import settings
-
+from app.models.event import (
+    Event,
+    EventCreate,
+)
 from app.models.user import (
-    User,
-    UserCreate,
-    Role,
     Permission,
     PermissionModule,
     PermissionPart,
     PermissionRight,
+    Role,
+    User,
+    UserCreate,
 )
-
-from app.models.apikey import ApiKey
 
 engine = create_engine(str(settings.SQLALCHEMY_DATABASE_URI))
 
@@ -101,5 +102,20 @@ def init_db(session: Session) -> None:
         )
         user = User.create(session=session, create_obj=user_in)
     user.add_role(db_obj=system_admin_role, session=session)
+    session.commit()
+
+    event = session.exec(
+        select(Event).where(Event.contact == settings.FIRST_SUPERUSER)
+    ).first()
+    if not event:
+        event_in = EventCreate(
+            contact=settings.FIRST_SUPERUSER,
+            is_active=True,
+            name="Admins first event",
+        )
+        event = Event.create(session=session, create_obj=event_in)
+    event.add_user(user, PermissionRight.ADMIN, session=session)
+
+    session.commit()
 
     # endregion

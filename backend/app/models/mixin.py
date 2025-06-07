@@ -1,7 +1,10 @@
 import uuid
+from datetime import datetime
 
-from pydantic import EmailStr, BaseModel
-from sqlmodel import Field
+from pydantic import BaseModel, EmailStr
+from sqlmodel import (
+    Field,
+)
 
 from .base import RowId as RowIdType
 
@@ -12,6 +15,10 @@ class Name(BaseModel):
 
 class FullName(BaseModel):
     full_name: str | None = Field(default=None, nullable=True, max_length=255)
+
+
+class Contact(BaseModel):
+    contact: str | None = Field(default=None, nullable=True, max_length=255)
 
 
 class IsActive(BaseModel):
@@ -64,3 +71,8 @@ class RowIdPublic(RowId):
 
 class Description(BaseModel):
     description: str | None = Field(default=None, nullable=True, max_length=512)
+
+
+class StartEndDate:
+    start_at: datetime | None = Field(default=None, nullable=True)
+    end_at: datetime | None = Field(default=None, nullable=True)

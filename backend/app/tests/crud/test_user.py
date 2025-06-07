@@ -3,11 +3,11 @@ from sqlmodel import Session
 
 from app.core.security import verify_password
 from app.models.user import (
+    PermissionModule,
+    PermissionPart,
     User,
     UserCreate,
     UserUpdate,
-    PermissionModule,
-    PermissionPart,
 )
 from app.tests.utils.utils import random_email, random_lower_string
 

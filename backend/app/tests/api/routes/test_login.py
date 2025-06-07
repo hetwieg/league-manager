@@ -5,8 +5,8 @@ from sqlmodel import Session
 
 from app.core.config import settings
 from app.core.security import verify_password
-from app.models.user import User, UserCreate
 from app.models.apikey import ApiKey, ApiKeyCreate
+from app.models.user import User, UserCreate
 from app.tests.utils.user import user_authentication_headers
 from app.tests.utils.utils import random_email, random_lower_string
 from app.utils import generate_password_reset_token

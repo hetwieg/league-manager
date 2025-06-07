@@ -1,21 +1,22 @@
 from typing import TYPE_CHECKING
 
 from pydantic import EmailStr
-from sqlmodel import Session, Field, Relationship, select
+from sqlmodel import Field, Relationship, Session, select
 
 from app.core.security import get_password_hash, verify_password
 
-from .base import (
-    RowId,
-    DocumentedStrEnum,
-    DocumentedIntFlag,
-    auto_enum,
-    BaseSQLModel,
-)
 from . import mixin
+from .base import (
+    BaseSQLModel,
+    DocumentedIntFlag,
+    DocumentedStrEnum,
+    RowId,
+    auto_enum,
+)
 
 if TYPE_CHECKING:
     from .apikey import ApiKey
+    from .event import EventUserLink
 
 
 # region # User ################################################################
@@ -24,6 +25,7 @@ if TYPE_CHECKING:
 class PermissionModule(DocumentedStrEnum):
     SYSTEM = auto_enum()
     USER = auto_enum()
+    EVENT = auto_enum()
 
 
 class PermissionPart(DocumentedStrEnum):
@@ -37,7 +39,13 @@ class PermissionRight(DocumentedIntFlag):
     UPDATE = auto_enum()
     DELETE = auto_enum()
 
-    ADMIN = CREATE | READ | UPDATE | DELETE
+    MANAGE_USERS = auto_enum()
+
+    ADMIN = CREATE | READ | UPDATE | DELETE | MANAGE_USERS
+
+
+class PermissionRightObject(BaseSQLModel):
+    rights: PermissionRight | None = Field(default=PermissionRight.READ, nullable=False)
 
 
 # ##############################################################################
@@ -108,6 +116,7 @@ class User(mixin.RowId, UserBase, table=True):
 
     # --- many-to-many links ---------------------------------------------------
     roles: list["Role"] = Relationship(back_populates="users", link_model=UserRoleLink)
+    event_links: list["EventUserLink"] = Relationship(back_populates="user")
 
     # --- CRUD actions ---------------------------------------------------------
     @classmethod
@@ -155,26 +164,40 @@ class User(mixin.RowId, UserBase, table=True):
             return None
         return db_obj
 
-    def add_role(self, *, name: str = None, id: RowId = None, db_obj: "Role" = None, session: Session) -> "User":
+    def add_role(
+        self,
+        *,
+        name: str = None,
+        id: RowId = None,
+        db_obj: "Role" = None,
+        session: Session,
+    ) -> "User":
         db_obj = Role.get(name=name, id=id, db_obj=db_obj, session=session)
 
         to_add = next((add for add in self.roles if add == db_obj), None)
 
         if not to_add:
             self.roles.append(db_obj)
+            session.add(self)
             session.commit()
 
         return self
 
-    def remove_role(self, *, name: str = None, id: RowId = None, db_obj: "Role" = None, session: Session) -> "User":
+    def remove_role(
+        self,
+        *,
+        name: str = None,
+        id: RowId = None,
+        db_obj: "Role" = None,
+        session: Session,
+    ) -> "User":
         db_obj = Role.get(name=name, id=id, db_obj=db_obj, session=session)
 
         to_remove = next((remove for remove in self.roles if remove == db_obj), None)
         if to_remove:
             statement = select(UserRoleLink).where(
-                    UserRoleLink.user_id == self.id,
-                    UserRoleLink.role_id == db_obj.id
-                )
+                UserRoleLink.user_id == self.id, UserRoleLink.role_id == db_obj.id
+            )
             link_to_remove = session.exec(statement).first()
 
             if link_to_remove:
@@ -290,7 +313,14 @@ class Role(
         return db_obj
 
     @classmethod
-    def get(cls, *, name: str = None, id: RowId = None, db_obj: "Role" = None, session: Session) -> "Role":
+    def get(
+        cls,
+        *,
+        name: str = None,
+        id: RowId = None,
+        db_obj: "Role" = None,
+        session: Session,
+    ) -> "Role":
         if db_obj:
             pass
         elif name:
