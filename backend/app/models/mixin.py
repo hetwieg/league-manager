@@ -17,6 +17,14 @@ class FullName(BaseModel):
     full_name: str | None = Field(default=None, nullable=True, max_length=255)
 
 
+class ThemeName(BaseModel):
+    theme_name: str = Field(index=True, max_length=255)
+
+
+class ThemeNameUpdate(ThemeName):
+    theme_name: str | None = Field(default=None, max_length=255)
+
+
 class Contact(BaseModel):
     contact: str | None = Field(default=None, nullable=True, max_length=255)
 
@@ -76,3 +84,10 @@ class Description(BaseModel):
 class StartEndDate:
     start_at: datetime | None = Field(default=None, nullable=True)
     end_at: datetime | None = Field(default=None, nullable=True)
+
+
+class Canceled(BaseModel):
+    canceled_at: datetime | None = Field(default=None, nullable=True)
+    canceled_reason: str | None = Field(default=None, nullable=True, max_length=1024)
+
+

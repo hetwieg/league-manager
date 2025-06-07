@@ -16,6 +16,10 @@ from app.models.event import (
     EventsPublic,
     EventUpdate,
     EventUserLink,
+    EventTeam,
+    EventTeamCreate,
+    EventTeamPublic,
+    EventTeamsPublic,
 )
 from app.models.user import (
     PermissionModule,
@@ -229,5 +233,167 @@ def remove_user_from_event(
         message="User removed successfully"
     )  # TODO: Return event or event_users
 
+
+# endregion
+
+
+# region # Event / Teams #######################################################
+
+@router.get("/{id}/teams", response_model=EventTeamsPublic, tags=router.tags + [ApiTags.TEAMS])
+def read_event_teams(
+    session: SessionDep, current_user: CurrentUser, id: RowId, skip: int = 0, limit: int = 100
+) -> Any:
+    """
+    Retrieve event teams from a single event.
+    """
+
+    # Event permissions
+    event = session.get(Event, id)
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+
+    if not current_user.has_permission(
+        module=PermissionModule.EVENT,
+        part=PermissionPart.ADMIN,
+        rights=(PermissionRight.READ | PermissionRight.MANGE_TEAMS),
+    ) and ( event and (event.user_has_right(user=current_user, rights=(PermissionRight.READ | PermissionRight.MANGE_TEAMS)))):
+        raise HTTPException(status_code=400, detail="Not enough permissions")
+
+    # Get list
+    count_statement = (
+        select(func.count())
+        .select_from(EventTeam)
+        .where(EventTeam.event_id == id)
+    )
+    count = session.exec(count_statement).one()
+    statement = (
+        select(EventTeam)
+        .where(EventTeam.event_id == id)
+        .offset(skip)
+        .limit(limit)
+    )
+    event_teams = session.exec(statement).all()
+
+    return EventTeamsPublic(data=event_teams, count=count)
+
+
+@router.post("/{id}/teams", response_model=EventTeamPublic, tags=router.tags + [ApiTags.TEAMS])
+def create_event_team(
+    *, session: SessionDep, current_user: CurrentUser, id: RowId, event_team_in: EventTeamCreate
+) -> Any:
+    """
+    Create new team inside event.
+    """
+
+    event = session.get(Event, id)
+
+    if not current_user.has_permission(
+        module=PermissionModule.EVENT,
+        part=PermissionPart.ADMIN,
+        rights=PermissionRight.MANGE_TEAMS,
+    ) and ( event and (event.user_has_rights(user=current_user, rights=PermissionRight.MANGE_TEAMS))):
+        raise HTTPException(status_code=400, detail="Not enough permissions")
+
+    event_team = EventTeam.create(create_obj=event_team_in, event=event, session=session)
+    return event_team
+
+
+@router.get("/teams", response_model=EventTeamsPublic, tags=router.tags + [ApiTags.TEAMS])
+def read_event_teams(
+    session: SessionDep, current_user: CurrentUser, skip: int = 0, limit: int = 100
+) -> Any:
+    """
+    Retrieve all event teams.
+    """
+
+    if not current_user.has_permission(
+        module=PermissionModule.EVENT,
+        part=PermissionPart.ADMIN,
+        rights=PermissionRight.MANGE_TEAMS,
+    ):
+        raise HTTPException(status_code=400, detail="Not enough permissions")
+
+    # Get list
+    count_statement = (
+        select(func.count())
+        .select_from(EventTeam)
+    )
+    count = session.exec(count_statement).one()
+    statement = (
+        select(EventTeam)
+        .offset(skip)
+        .limit(limit)
+    )
+    event_teams = session.exec(statement).all()
+
+    return EventTeamsPublic(data=event_teams, count=count)
+
+
+@router.get("/teams/{id}", response_model=EventTeamPublic, tags=router.tags + [ApiTags.TEAMS])
+def read_event_team(session: SessionDep, current_user: CurrentUser, id: RowId) -> Any:
+    """
+    Get event team by ID.
+    """
+    event_team = session.get(EventTeam, id)
+    if not event_team:
+        raise HTTPException(status_code=404, detail="Event team not found")
+
+    event = session.get(Event, event_team.event_id)
+
+    if not current_user.has_permission(
+        module=PermissionModule.EVENT,
+        part=PermissionPart.ADMIN,
+        rights=PermissionRight.MANGE_TEAMS,
+    ) and ( event and (event.user_has_rights(user=current_user, rights=PermissionRight.MANGE_TEAMS))):
+        raise HTTPException(status_code=400, detail="Not enough permissions")
+
+    return event_team
+
+
+@router.put("/teams/{id}", response_model=EventTeamPublic, tags=router.tags + [ApiTags.TEAMS])
+def create_event_team(
+    *, session: SessionDep, current_user: CurrentUser, id: RowId, event_team_in: EventTeamCreate
+) -> Any:
+    """
+    Update team.
+    """
+    event_team = session.get(EventTeam, id)
+    if not event_team:
+        raise HTTPException(status_code=404, detail="Event team not found")
+
+    event = session.get(Event, event_team.event_id)
+
+    if not current_user.has_permission(
+        module=PermissionModule.EVENT,
+        part=PermissionPart.ADMIN,
+        rights=PermissionRight.MANGE_TEAMS,
+    ) and ( event and (event.user_has_rights(user=current_user, rights=PermissionRight.MANGE_TEAMS))):
+        raise HTTPException(status_code=400, detail="Not enough permissions")
+
+    event_team = EventTeam.update(db_obj=event_team, in_obj=event_team_in, session=session)
+    return event_team
+
+
+@router.delete("/teams/{id}", tags=router.tags + [ApiTags.TEAMS])
+def delete_event_team(session: SessionDep,current_user: CurrentUser, id: RowId) -> Message:
+    """
+    Delete an event team.
+    """
+    event_team = session.get(EventTeam, id)
+    if not event_team:
+        raise HTTPException(status_code=404, detail="Event team not found")
+
+    event = session.get(Event, event_team.event_id)
+
+    if not current_user.has_permission(
+        module=PermissionModule.EVENT,
+        part=PermissionPart.ADMIN,
+        rights=PermissionRight.MANGE_TEAMS,
+    ) and (event.user_has_rights(user=current_user, rights=PermissionRight.MANGE_TEAMS)):
+        raise HTTPException(status_code=400, detail="Not enough permissions")
+
+    session.delete(event_team)
+    session.commit()
+    return Message(message="Event team deleted successfully")
 
 # endregion

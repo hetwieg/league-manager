@@ -40,6 +40,7 @@ class PermissionRight(DocumentedIntFlag):
     DELETE = auto_enum()
 
     MANAGE_USERS = auto_enum()
+    MANGE_TEAMS = auto_enum()
 
     ADMIN = CREATE | READ | UPDATE | DELETE | MANAGE_USERS
 

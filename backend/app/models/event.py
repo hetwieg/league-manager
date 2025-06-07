@@ -159,3 +159,70 @@ class EventsPublic(BaseSQLModel):
 
 
 # endregion
+
+# region EventTeam ############################################################
+
+
+class EventTeamBase(mixin.ThemeName, mixin.CheckInCheckOut, mixin.Canceled, BaseSQLModel):
+    # scouting_team_id: RowId | None = Field(
+    #     foreign_key="ScoutingTeam.id", nullable=False, ondelete="CASCADE"
+    # )
+    pass
+
+
+# Properties to receive via API on creation
+class EventTeamCreate(EventTeamBase):
+    pass
+
+
+# Properties to receive via API on update, all are optional
+class EventTeamUpdate(mixin.ThemeNameUpdate, EventTeamBase):
+    pass
+
+
+class EventTeam(mixin.RowId, EventTeamBase, table=True):
+    # --- database only items --------------------------------------------------
+
+    # --- read only items ------------------------------------------------------
+    event_id: RowId = Field(
+        foreign_key="event.id", nullable=False, ondelete="CASCADE"
+    )
+
+    # --- back_populates links -------------------------------------------------
+    event: "Event" = Relationship(back_populates="team_links", cascade_delete=True)
+    # team: "ScoutingTeam" = Relationship(back_populates="event_links", cascade_delete=True)
+
+    # --- CRUD actions ---------------------------------------------------------
+    @classmethod
+    def create(cls, *, session: Session, create_obj: EventTeamCreate, event: Event) -> "EventTeam":
+        data_obj = create_obj.model_dump(exclude_unset=True)
+
+        db_obj = cls.model_validate(data_obj, update={"event_id": event.id})
+        session.add(db_obj)
+        session.commit()
+        session.refresh(db_obj)
+        return db_obj
+
+    @classmethod
+    def update(
+        cls, *, session: Session, db_obj: "EventTeam", in_obj: EventTeamUpdate
+    ) -> "EventTeam":
+        data_obj = in_obj.model_dump(exclude_unset=True)
+        db_obj.sqlmodel_update(data_obj)
+        session.add(db_obj)
+        session.commit()
+        session.refresh(db_obj)
+        return db_obj
+
+
+# Properties to return via API, id is always required
+class EventTeamPublic(mixin.RowIdPublic, EventTeamBase):
+    event_id: RowId
+
+
+class EventTeamsPublic(BaseSQLModel):
+    data: list[EventTeamPublic]
+    count: int
+
+
+# endregion
