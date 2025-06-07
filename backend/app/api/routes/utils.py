@@ -2,10 +2,10 @@ from fastapi import APIRouter, Depends
 from pydantic.networks import EmailStr
 
 from app.api.deps import get_current_system_admin
-from app.models.base import Message
+from app.models.base import ApiTags, Message
 from app.utils import generate_test_email, send_email
 
-router = APIRouter(prefix="/utils", tags=["utils"])
+router = APIRouter(prefix="/utils", tags=[ApiTags.UTILS])
 
 
 @router.post(

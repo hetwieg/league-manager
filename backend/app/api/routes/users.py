@@ -18,7 +18,7 @@ from app.models.apikey import (
     ApiKeyPublic,
     ApiKeysPublic,
 )
-from app.models.base import Message, RowId
+from app.models.base import ApiTags, Message, RowId
 from app.models.user import (
     PermissionModule,
     PermissionPart,
@@ -34,7 +34,7 @@ from app.models.user import (
 )
 from app.utils import generate_new_account_email, send_email
 
-router = APIRouter(prefix="/users", tags=["users"])
+router = APIRouter(prefix="/users", tags=[ApiTags.USERS])
 
 
 @router.get(

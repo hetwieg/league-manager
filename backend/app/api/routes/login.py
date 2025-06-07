@@ -10,7 +10,7 @@ from app.core import security
 from app.core.config import settings
 from app.core.security import get_password_hash
 from app.models.apikey import ApiKey
-from app.models.base import Message
+from app.models.base import ApiTags, Message
 from app.models.user import NewPassword, Token, User, UserPublic
 from app.utils import (
     generate_password_reset_token,
@@ -19,7 +19,7 @@ from app.utils import (
     verify_password_reset_token,
 )
 
-router = APIRouter(tags=["login"])
+router = APIRouter(tags=[ApiTags.LOGIN])
 
 
 @router.post("/login/access-token")
