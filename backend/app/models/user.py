@@ -207,12 +207,15 @@ class User(mixin.RowId, UserBase, table=True):
 
         return self
 
-    def has_permission(
+    def has_permissions(
         self,
         module: PermissionModule,
         part: PermissionPart,
         rights: PermissionRight | None = None,
     ) -> bool:
+        """
+        Check if all rights are present for the user for the given permission
+        """
         return any(
             any(
                 (
@@ -220,6 +223,29 @@ class User(mixin.RowId, UserBase, table=True):
                     and link.permission.part == part
                     and link.permission.is_active
                     and (not rights or (link.rights & rights) == rights)
+                )
+                for link in role.permission_links
+                if role.is_active
+            )
+            for role in self.roles
+        )
+
+    def has_permission(
+        self,
+        module: PermissionModule,
+        part: PermissionPart,
+        rights: PermissionRight | None = None,
+    ) -> bool:
+        """
+        Check if at least one right is present for the user for the given permission
+        """
+        return any(
+            any(
+                (
+                    link.permission.module == module
+                    and link.permission.part == part
+                    and link.permission.is_active
+                    and (not rights or (link.rights & rights))
                 )
                 for link in role.permission_links
                 if role.is_active

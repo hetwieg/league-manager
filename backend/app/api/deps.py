@@ -61,7 +61,7 @@ def get_user_permissions(
     current_user: CurrentUser,
     rights: PermissionRight = None,
 ) -> User:
-    if not current_user.has_permission(module, part, rights):
+    if not current_user.has_permissions(module, part, rights):
         raise HTTPException(
             status_code=403, detail="The user doesn't have enough privileges"
         )

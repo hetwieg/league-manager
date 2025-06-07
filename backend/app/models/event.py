@@ -138,11 +138,31 @@ class Event(mixin.RowId, EventBase, table=True):
         user: User,
         rights: PermissionRight | None = None,
     ) -> bool:
+        """
+        Check if all rights are present for the user
+        """
         return any(
             (
                 link.user == user
                 and link.rights
                 and (not rights or (link.rights & rights) == rights)
+            )
+            for link in self.user_links
+        )
+
+    def user_has_right(
+        self,
+        user: User,
+        rights: PermissionRight | None = None,
+    ) -> bool:
+        """
+        Check if at least one right is present for the user
+        """
+        return any(
+            (
+                link.user == user
+                and link.rights
+                and (not rights or (link.rights & rights))
             )
             for link in self.user_links
         )

@@ -42,7 +42,7 @@ def read_events(
     Retrieve events.
     """
 
-    if current_user.has_permission(
+    if current_user.has_permissions(
         module=PermissionModule.EVENT,
         part=PermissionPart.ADMIN,
         rights=PermissionRight.READ,
@@ -84,7 +84,7 @@ def read_event(session: SessionDep, current_user: CurrentUser, id: RowId) -> Any
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
 
-    if not current_user.has_permission(
+    if not current_user.has_permissions(
         module=PermissionModule.EVENT,
         part=PermissionPart.ADMIN,
         rights=PermissionRight.READ,
@@ -100,7 +100,7 @@ def create_event(
     """
     Create new event.
     """
-    if not current_user.has_permission(
+    if not current_user.has_permissions(
         module=PermissionModule.EVENT,
         part=PermissionPart.ADMIN,
         rights=PermissionRight.CREATE,
@@ -127,7 +127,7 @@ def update_event(
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
 
-    if not current_user.has_permission(
+    if not current_user.has_permissions(
         module=PermissionModule.EVENT,
         part=PermissionPart.ADMIN,
         rights=PermissionRight.UPDATE,
@@ -150,7 +150,7 @@ def delete_event(
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
 
-    if not current_user.has_permission(
+    if not current_user.has_permissions(
         module=PermissionModule.EVENT,
         part=PermissionPart.ADMIN,
         rights=PermissionRight.DELETE,
@@ -183,7 +183,7 @@ def add_user_to_event(
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
 
-    if not current_user.has_permission(
+    if not current_user.has_permissions(
         module=PermissionModule.EVENT,
         part=PermissionPart.ADMIN,
         rights=PermissionRight.MANAGE_USERS,
@@ -215,7 +215,7 @@ def remove_user_from_event(
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
 
-    if not current_user.has_permission(
+    if not current_user.has_permissions(
         module=PermissionModule.EVENT,
         part=PermissionPart.ADMIN,
         rights=PermissionRight.MANAGE_USERS,
@@ -256,7 +256,7 @@ def read_event_teams(
         module=PermissionModule.EVENT,
         part=PermissionPart.ADMIN,
         rights=(PermissionRight.READ | PermissionRight.MANGE_TEAMS),
-    ) and ( event and (event.user_has_rights(user=current_user, rights=(PermissionRight.READ | PermissionRight.MANGE_TEAMS)))):
+    ) and ( event and (event.user_has_right(user=current_user, rights=(PermissionRight.READ | PermissionRight.MANGE_TEAMS)))):
         raise HTTPException(status_code=400, detail="Not enough permissions")
 
     # Get list
@@ -287,7 +287,7 @@ def create_event_team(
 
     event = session.get(Event, id)
 
-    if not current_user.has_permission(
+    if not current_user.has_permissions(
         module=PermissionModule.EVENT,
         part=PermissionPart.ADMIN,
         rights=PermissionRight.MANGE_TEAMS,
@@ -306,7 +306,7 @@ def read_event_teams(
     Retrieve all event teams.
     """
 
-    if not current_user.has_permission(
+    if not current_user.has_permissions(
         module=PermissionModule.EVENT,
         part=PermissionPart.ADMIN,
         rights=PermissionRight.MANGE_TEAMS,
@@ -340,7 +340,7 @@ def read_event_team(session: SessionDep, current_user: CurrentUser, id: RowId) -
 
     event = session.get(Event, event_team.event_id)
 
-    if not current_user.has_permission(
+    if not current_user.has_permissions(
         module=PermissionModule.EVENT,
         part=PermissionPart.ADMIN,
         rights=PermissionRight.MANGE_TEAMS,
@@ -363,7 +363,7 @@ def create_event_team(
 
     event = session.get(Event, event_team.event_id)
 
-    if not current_user.has_permission(
+    if not current_user.has_permissions(
         module=PermissionModule.EVENT,
         part=PermissionPart.ADMIN,
         rights=PermissionRight.MANGE_TEAMS,
@@ -385,7 +385,7 @@ def delete_event_team(session: SessionDep,current_user: CurrentUser, id: RowId) 
 
     event = session.get(Event, event_team.event_id)
 
-    if not current_user.has_permission(
+    if not current_user.has_permissions(
         module=PermissionModule.EVENT,
         part=PermissionPart.ADMIN,
         rights=PermissionRight.MANGE_TEAMS,

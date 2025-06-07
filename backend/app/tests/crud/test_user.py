@@ -61,7 +61,7 @@ def test_check_if_user_is_superuser(db: Session) -> None:
     user = User.create(session=db, create_obj=user_in)
     user.add_role(name="Admin", session=db)
     assert (
-        user.has_permission(module=PermissionModule.SYSTEM, part=PermissionPart.ADMIN)
+        user.has_permissions(module=PermissionModule.SYSTEM, part=PermissionPart.ADMIN)
         is True
     )
 
@@ -73,7 +73,7 @@ def test_check_if_user_is_superuser_normal_user(db: Session) -> None:
     user = User.create(session=db, create_obj=user_in)
     user.add_role(name="User", session=db)
     assert (
-        user.has_permission(module=PermissionModule.SYSTEM, part=PermissionPart.ADMIN)
+        user.has_permissions(module=PermissionModule.SYSTEM, part=PermissionPart.ADMIN)
         is False
     )
 

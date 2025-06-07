@@ -200,7 +200,7 @@ def delete_user_me(session: SessionDep, current_user: CurrentUser) -> Any:
     """
     Delete own user.
     """
-    if current_user.has_permission(
+    if current_user.has_permissions(
         module=PermissionModule.SYSTEM,
         part=PermissionPart.ADMIN,
         rights=PermissionRight.DELETE,
@@ -239,7 +239,7 @@ def read_user_by_id(
     user = session.get(User, user_id)
     if user == current_user:
         return user
-    if not current_user.has_permission(
+    if not current_user.has_permissions(
         module=PermissionModule.USER,
         part=PermissionPart.ADMIN,
         rights=PermissionRight.READ,
