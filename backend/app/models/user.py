@@ -42,7 +42,7 @@ class PermissionRight(DocumentedIntFlag):
     MANAGE_USERS = auto_enum()
     MANGE_TEAMS = auto_enum()
 
-    ADMIN = CREATE | READ | UPDATE | DELETE | MANAGE_USERS
+    ADMIN = CREATE | READ | UPDATE | DELETE | MANAGE_USERS | MANGE_TEAMS
 
 
 class PermissionRightObject(BaseSQLModel):

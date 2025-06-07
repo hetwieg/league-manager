@@ -298,8 +298,8 @@ def create_event_team(
     return event_team
 
 
-@router.get("/teams", response_model=EventTeamsPublic, tags=router.tags + [ApiTags.TEAMS])
-def read_event_teams(
+@router.get("-teams", response_model=EventTeamsPublic, tags=router.tags + [ApiTags.TEAMS])
+def read_all_event_teams(
     session: SessionDep, current_user: CurrentUser, skip: int = 0, limit: int = 100
 ) -> Any:
     """
@@ -329,7 +329,7 @@ def read_event_teams(
     return EventTeamsPublic(data=event_teams, count=count)
 
 
-@router.get("/teams/{id}", response_model=EventTeamPublic, tags=router.tags + [ApiTags.TEAMS])
+@router.get("-teams/{id}", response_model=EventTeamPublic, tags=router.tags + [ApiTags.TEAMS])
 def read_event_team(session: SessionDep, current_user: CurrentUser, id: RowId) -> Any:
     """
     Get event team by ID.
@@ -350,7 +350,7 @@ def read_event_team(session: SessionDep, current_user: CurrentUser, id: RowId) -
     return event_team
 
 
-@router.put("/teams/{id}", response_model=EventTeamPublic, tags=router.tags + [ApiTags.TEAMS])
+@router.put("-teams/{id}", response_model=EventTeamPublic, tags=router.tags + [ApiTags.TEAMS])
 def create_event_team(
     *, session: SessionDep, current_user: CurrentUser, id: RowId, event_team_in: EventTeamCreate
 ) -> Any:
@@ -374,7 +374,7 @@ def create_event_team(
     return event_team
 
 
-@router.delete("/teams/{id}", tags=router.tags + [ApiTags.TEAMS])
+@router.delete("-teams/{id}", tags=router.tags + [ApiTags.TEAMS])
 def delete_event_team(session: SessionDep,current_user: CurrentUser, id: RowId) -> Message:
     """
     Delete an event team.
