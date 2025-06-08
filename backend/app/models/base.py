@@ -1,8 +1,11 @@
+import re
+
 from enum import Enum, IntFlag  # Python 3.11 >= StrEnum
 from enum import auto as auto_enum
 from uuid import UUID as RowId
 
 from sqlmodel import SQLModel
+from sqlalchemy.orm import declared_attr
 
 __all__ = [
     "RowId",
@@ -18,8 +21,12 @@ __all__ = [
 
 
 class BaseSQLModel(SQLModel):
-    pass
-
+    # Generate __tablename__ automatically with snake_case
+    # noinspection PyMethodParameters
+    @declared_attr  # type: ignore
+    def __tablename__(cls) -> str:
+        rx = re.compile(r"(?<=.)(((?<![A-Z])[A-Z])|([A-Z](?=[a-z])))")
+        return rx.sub("_\\1", cls.__name__).lower()
 
 # endregion
 
