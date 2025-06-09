@@ -39,6 +39,7 @@ class DocumentedStrEnum(str, Enum):
 
 
 class DocumentedIntFlag(IntFlag):
+    # TODO: Build DB sport to proper store flags and make it possible to store all mutations
     pass
 
 

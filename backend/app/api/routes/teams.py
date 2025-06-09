@@ -97,7 +97,7 @@ def read_team(session: SessionDep, current_user: CurrentUser, id: RowId) -> Any:
             part=PermissionPart.ADMIN,
             rights=PermissionRight.READ,
     ) and not (event.user_has_rights(user=current_user, rights=PermissionRight.MANAGE_TEAMS)):
-        raise HTTPException(status_code=400, detail="Not enough permissions")
+        raise HTTPException(status_code=403, detail="Not enough permissions")
 
     return team
 
@@ -119,7 +119,7 @@ def create_team(
         part=PermissionPart.ADMIN,
         rights=PermissionRight.UPDATE,
     ) and not (event.user_has_rights(user=current_user, rights=PermissionRight.MANAGE_TEAMS)):
-        raise HTTPException(status_code=400, detail="Not enough permissions")
+        raise HTTPException(status_code=403, detail="Not enough permissions")
 
     team = Team.create(create_obj=team_in, session=session)
     return team
@@ -146,7 +146,7 @@ def update_team(
         part=PermissionPart.ADMIN,
         rights=PermissionRight.UPDATE,
     ) and not (event.user_has_rights(user=current_user, rights=PermissionRight.MANAGE_TEAMS)):
-        raise HTTPException(status_code=400, detail="Not enough permissions")
+        raise HTTPException(status_code=403, detail="Not enough permissions")
 
     # Check rights for the new event data
     if team_in.event_id:
@@ -159,7 +159,7 @@ def update_team(
                 part=PermissionPart.ADMIN,
                 rights=PermissionRight.UPDATE,
         ) and not (event.user_has_rights(user=current_user, rights=PermissionRight.MANAGE_TEAMS)):
-            raise HTTPException(status_code=400, detail="Not enough permissions")
+            raise HTTPException(status_code=403, detail="Not enough permissions")
 
     # Update the team
     team = Team.update(db_obj=team, in_obj=team_in, session=session)
@@ -184,7 +184,7 @@ def delete_team(session: SessionDep,current_user: CurrentUser, id: RowId) -> Mes
         part=PermissionPart.ADMIN,
         rights=PermissionRight.DELETE,
     ) and not (event.user_has_rights(user=current_user, rights=PermissionRight.MANAGE_TEAMS)):
-        raise HTTPException(status_code=400, detail="Not enough permissions")
+        raise HTTPException(status_code=403, detail="Not enough permissions")
 
     session.delete(team)
     session.commit()

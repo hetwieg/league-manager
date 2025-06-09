@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from pydantic import EmailStr
+from pydantic import EmailStr, field_validator
 from sqlmodel import Field, Relationship, Session, select
 
 from app.core.security import get_password_hash, verify_password
@@ -44,10 +44,6 @@ class PermissionRight(DocumentedIntFlag):
     MANAGE_TEAMS = auto_enum()
 
     ADMIN = CREATE | READ | UPDATE | DELETE | MANAGE_USERS | MANAGE_TEAMS
-
-
-class PermissionRightObject(BaseSQLModel):
-    rights: PermissionRight | None = Field(default=PermissionRight.READ, nullable=False)
 
 
 # ##############################################################################

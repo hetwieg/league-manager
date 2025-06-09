@@ -82,7 +82,7 @@ def test_read_event_not_enough_permissions(client: TestClient, normal_user_token
         f"{settings.API_V1_STR}/teams/{team.id}",
         headers=normal_user_token_headers,
     )
-    assert response.status_code == 400
+    assert response.status_code == 403
     assert response.json()["detail"] == "Not enough permissions"
 
 
@@ -207,7 +207,7 @@ def test_update_team_not_enough_permissions(client: TestClient, normal_user_toke
         headers=normal_user_token_headers,
         json=data,
     )
-    assert response.status_code == 400
+    assert response.status_code == 403
     assert response.json()["detail"] == "Not enough permissions"
 
 
@@ -288,7 +288,7 @@ def test_update_team_event_with_event_user_not_enough_permissions(client: TestCl
         json=data,
     )
 
-    assert response.status_code == 400
+    assert response.status_code == 403
     assert response.json()["detail"] == "Not enough permissions"
 
 
@@ -317,7 +317,7 @@ def test_delete_not_enough_permissions(client: TestClient, normal_user_token_hea
         f"{settings.API_V1_STR}/teams/{team.id}",
         headers=normal_user_token_headers,
     )
-    assert response.status_code == 400
+    assert response.status_code == 403
     assert response.json()["detail"] == "Not enough permissions"
 
 

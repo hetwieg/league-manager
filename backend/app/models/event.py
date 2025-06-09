@@ -23,8 +23,23 @@ if TYPE_CHECKING:
 # region # Event ###############################################################
 
 
-# Event auth
-class EventUserLink(BaseSQLModel, table=True):
+# Shared properties
+class EventUserLinkBase(BaseSQLModel):
+    rights: PermissionRight = Field(default=PermissionRight.READ, nullable=False)
+
+
+# Properties to receive via API on creation
+class EventUserLinkCreate(EventUserLinkBase):
+    user_id: RowId = Field(default=None, nullable=False)
+
+
+# Properties to receive via API on update, all are optional
+class EventUserLinkUpdate(EventUserLinkBase):
+    pass
+
+
+# Database model, database table inferred from class name
+class EventUserLink(EventUserLinkBase, table=True):
     event_id: RowId = Field(
         foreign_key="event.id",
         primary_key=True,
@@ -39,10 +54,20 @@ class EventUserLink(BaseSQLModel, table=True):
         ondelete="CASCADE",
     )
 
-    rights: PermissionRight = Field(default=PermissionRight.READ, nullable=False)
 
     event: "Event" = Relationship(back_populates="user_links")
     user: "User" = Relationship(back_populates="event_links")
+
+
+# Properties to return via API
+class EventUserLinkPublic(EventUserLinkBase):
+    user_id: RowId
+    event_id: RowId
+
+
+class EventUserLinksPublic(BaseSQLModel):
+    data: list[EventUserLinkPublic]
+    count: int
 
 
 # ##############################################################################
@@ -102,41 +127,51 @@ class Event(mixin.RowId, EventBase, table=True):
         session.refresh(db_obj)
         return db_obj
 
+    def get_user_link(self, user: User) -> EventUserLink | None:
+        return next(
+            (link for link in self.user_links if link.user == user), None
+        )
+
     def add_user(
         self,
         user: User,
         rights: PermissionRight = PermissionRight.READ,
         *,
         session: Session,
-    ) -> "Event":
-        to_add = next((add for add in self.user_links if add.user == user), None)
+    ) -> "EventUserLink | None":
+        to_add = self.get_user_link(user=user)
 
-        if to_add:
-            to_add.rights = rights
-            session.add(to_add)
-        else:
+        if to_add is None:
             self.user_links.append(EventUserLink(event=self, user=user, rights=rights))
             session.add(self.user_links[-1])
+            session.commit()
+            return self.user_links[-1]
 
-        session.commit()
+        return None
 
-        return self
+    def update_user(
+        self,
+        user: User,
+        rights: PermissionRight = PermissionRight.READ,
+        *,
+        session: Session,
+    ) -> "EventUserLink | None":
+        to_update = self.get_user_link(user=user)
 
-    def remove_user(self, user: User, *, session: Session) -> "Event":
-        to_remove = next(
-            (remove for remove in self.user_links if remove.user == user), None
-        )
+        if to_update:
+            to_update.rights = rights
+            session.add(to_update)
+            session.commit()
+            return to_update
+
+        return None
+
+    def remove_user(self, user: User, *, session: Session) -> None:
+        to_remove = self.get_user_link(user=user)
         if to_remove:
-            statement = select(EventUserLink).where(
-                EventUserLink.event_id == self.id, EventUserLink.user_id == user.id
-            )
-            link_to_remove = session.exec(statement).first()
+            session.delete(to_remove)
+            session.commit()
 
-            if link_to_remove:
-                session.delete(link_to_remove)
-                session.commit()
-
-        return self
 
     def user_has_rights(
         self,

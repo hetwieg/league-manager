@@ -16,12 +16,15 @@ from app.models.event import (
     EventsPublic,
     EventUpdate,
     EventUserLink,
+    EventUserLinkCreate,
+    EventUserLinkUpdate,
+    EventUserLinkPublic,
+    EventUserLinksPublic,
 )
 from app.models.user import (
     PermissionModule,
     PermissionPart,
     PermissionRight,
-    PermissionRightObject,
     User,
 )
 
@@ -87,7 +90,7 @@ def read_event(session: SessionDep, current_user: CurrentUser, id: RowId) -> Any
         part=PermissionPart.ADMIN,
         rights=PermissionRight.READ,
     ) and not (event.user_has_rights(user=current_user, rights=PermissionRight.READ)):
-        raise HTTPException(status_code=400, detail="Not enough permissions")
+        raise HTTPException(status_code=403, detail="Not enough permissions")
 
     return event
 
@@ -131,7 +134,7 @@ def update_event(
         part=PermissionPart.ADMIN,
         rights=PermissionRight.UPDATE,
     ) and not (event.user_has_rights(user=current_user, rights=PermissionRight.UPDATE)):
-        raise HTTPException(status_code=400, detail="Not enough permissions")
+        raise HTTPException(status_code=403, detail="Not enough permissions")
 
     return Event.update(db_obj=event, in_obj=event_in, session=session)
 
@@ -154,7 +157,7 @@ def delete_event(
         part=PermissionPart.ADMIN,
         rights=PermissionRight.DELETE,
     ) and not (event.user_has_rights(user=current_user, rights=PermissionRight.DELETE)):
-        raise HTTPException(status_code=400, detail="Not enough permissions")
+        raise HTTPException(status_code=403, detail="Not enough permissions")
 
     session.delete(event)
     session.commit()
@@ -167,18 +170,56 @@ def delete_event(
 # region # Events / Users ######################################################
 
 
-@router.post("/{id}/users/{user_id}", tags=[ApiTags.USERS])
-def add_user_to_event(
+@router.get("/{event_id}/users/", response_model=EventUserLinksPublic)
+def read_event_users(
+    session: SessionDep, current_user: CurrentUser, event_id: RowId, skip: int = 0, limit: int = 100
+) -> Any:
+    """
+    Retrieve all event users.
+    """
+
+    event = session.get(Event, event_id)
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+
+    if not current_user.has_permissions(
+        module=PermissionModule.EVENT,
+        part=PermissionPart.ADMIN,
+        rights=PermissionRight.MANAGE_USERS,
+    ) and not (event.user_has_rights(user=current_user, rights=PermissionRight.MANAGE_USERS)):
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+
+    count_statement = (select(func.count())
+                       .select_from(EventUserLink)
+                       .where(EventUserLink.event_id == event.id)
+                       )
+    count = session.exec(count_statement).one()
+    statement = (select(EventUserLink)
+                 .where(EventUserLink.event_id == event.id)
+                 .offset(skip)
+                 .limit(limit)
+                 )
+    event_user_links = session.exec(statement).all()
+
+    return EventUserLinksPublic(data=event_user_links, count=count)
+
+
+@router.post("/{event_id}/users/", tags=[ApiTags.USERS], response_model=EventUserLinkPublic)
+def create_event_user(
     session: SessionDep,
     current_user: CurrentUser,
-    id: RowId,
-    user_id: RowId,
-    rights_in: PermissionRightObject,
-) -> Message:
+    event_id: RowId,
+    user_in: EventUserLinkCreate,
+) -> Any:
     """
-    Add or update a user to an event.
+    Create a new link between a user and an event.
     """
-    event = session.get(Event, id)
+
+    if user_in.rights & ~PermissionRight.ADMIN:
+        # FIXME: find a proper richts checker
+        raise HTTPException(status_code=400, detail="Invalid permission rights")
+
+    event = session.get(Event, event_id)
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
 
@@ -186,44 +227,88 @@ def add_user_to_event(
         module=PermissionModule.EVENT,
         part=PermissionPart.ADMIN,
         rights=PermissionRight.MANAGE_USERS,
-    ) and not (
-        event.user_has_rights(
-            user=current_user, rights=(PermissionRight.MANAGE_USERS | rights_in.rights)
-        )
-    ):
-        raise HTTPException(status_code=400, detail="Not enough permissions")
+    ) and not (event.user_has_rights(user=current_user, rights=(PermissionRight.MANAGE_USERS | user_in.rights))):
+        raise HTTPException(status_code=403, detail="Not enough permissions")
 
-    user = session.get(User, user_id)
-    if not event:
+    user = session.get(User, user_in.user_id)
+    if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    event.add_user(user=user, rights=rights_in.rights, session=session)
-    return Message(
-        message="User added successfully"
-    )
+    user_link = event.get_user_link(user)
+    if user_link:
+        raise HTTPException(status_code=400, detail="User already part of this event")
+
+    return event.add_user(user=user, rights=user_in.rights, session=session)
 
 
-@router.delete("/{id}/users/{user_id}", tags=[ApiTags.USERS])
-def remove_user_from_event(
-    session: SessionDep, current_user: CurrentUser, id: RowId, user_id: RowId
-) -> Message:
+@router.put("/{event_id}/users/{user_id}", tags=[ApiTags.USERS], response_model=EventUserLinkPublic)
+def update_user_in_event(
+    session: SessionDep,
+    current_user: CurrentUser,
+    event_id: RowId,
+    user_id: RowId,
+    user_in: EventUserLinkUpdate,
+) -> Any:
     """
-    Remove a user from an event.
+    Update a user link within an event.
     """
-    event = session.get(Event, id)
+
+    event = session.get(Event, event_id)
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
-
-    if not current_user.has_permissions(
-        module=PermissionModule.EVENT,
-        part=PermissionPart.ADMIN,
-        rights=PermissionRight.MANAGE_USERS,
-    ) and not event.user_has_rights(user=current_user, rights=PermissionRight.MANAGE_USERS):
-        raise HTTPException(status_code=403, detail="Not enough permissions")
 
     user = session.get(User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+
+    valid_flags = sum(flag.value for flag in PermissionRight)
+    if user_in.rights & ~valid_flags:
+        # FIXME: find a proper richts checker
+        raise HTTPException(status_code=400, detail="Invalid permission rights")
+
+    if not current_user.has_permissions(
+        module=PermissionModule.EVENT,
+        part=PermissionPart.ADMIN,
+        rights=PermissionRight.MANAGE_USERS,
+    ) and not (event.user_has_rights(user=current_user, rights=(PermissionRight.MANAGE_USERS | user_in.rights))):
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+
+    user_link = event.get_user_link(user)
+    if not user_link:
+        raise HTTPException(status_code=404, detail="User is not part of this event")
+
+    return event.update_user(user=user, rights=user_in.rights, session=session)
+
+
+@router.delete("/{event_id}/users/{user_id}", tags=[ApiTags.USERS])
+def remove_user_from_event(
+    session: SessionDep, current_user: CurrentUser, event_id: RowId, user_id: RowId
+) -> Message:
+    """
+    Remove a user link from an event.
+    """
+    event = session.get(Event, event_id)
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+
+    user = session.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if not current_user.has_permissions(
+        module=PermissionModule.EVENT,
+        part=PermissionPart.ADMIN,
+        rights=PermissionRight.MANAGE_USERS,
+    ):
+        if current_user.id == user.id:
+            raise HTTPException(status_code=403, detail="Users are not allowed to delete themselves when they are not an super admin")
+
+        if not event.user_has_rights(user=current_user, rights=PermissionRight.MANAGE_USERS):
+            raise HTTPException(status_code=403, detail="Not enough permissions")
+
+    user_link = event.get_user_link(user)
+    if not user_link:
+        raise HTTPException(status_code=404, detail="User is not part of this event")
 
     event.remove_user(user=user, session=session)
     return Message(
