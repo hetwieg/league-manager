@@ -1,6 +1,6 @@
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, status
 from sqlmodel import func, select
 
 from app.api.deps import CurrentUser, SessionDep
@@ -86,18 +86,18 @@ def read_team(session: SessionDep, current_user: CurrentUser, id: RowId) -> Any:
     """
     team = session.get(Team, id)
     if not team:
-        raise HTTPException(status_code=404, detail="Team not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Team not found")
 
     event = session.get(Event, team.event_id)
     if not event:
-        raise HTTPException(status_code=404, detail="Event not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
 
     if not current_user.has_permissions(
             module=PermissionModule.TEAM,
             part=PermissionPart.ADMIN,
             rights=PermissionRight.READ,
     ) and not (event.user_has_rights(user=current_user, rights=PermissionRight.MANAGE_TEAMS)):
-        raise HTTPException(status_code=403, detail="Not enough permissions")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions")
 
     return team
 
@@ -112,14 +112,14 @@ def create_team(
 
     event = session.get(Event, team_in.event_id)
     if not event:
-        raise HTTPException(status_code=404, detail="Event not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
 
     if not current_user.has_permissions(
         module=PermissionModule.TEAM,
         part=PermissionPart.ADMIN,
         rights=PermissionRight.UPDATE,
     ) and not (event.user_has_rights(user=current_user, rights=PermissionRight.MANAGE_TEAMS)):
-        raise HTTPException(status_code=403, detail="Not enough permissions")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions")
 
     team = Team.create(create_obj=team_in, session=session)
     return team
@@ -134,32 +134,32 @@ def update_team(
     """
     team = session.get(Team, id)
     if not team:
-        raise HTTPException(status_code=404, detail="Team not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Team not found")
 
     # Check user's permissions for the existing event
     event = session.get(Event, team.event_id)
     if not event:
-        raise HTTPException(status_code=404, detail="Event not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
 
     if not current_user.has_permissions(
         module=PermissionModule.TEAM,
         part=PermissionPart.ADMIN,
         rights=PermissionRight.UPDATE,
     ) and not (event.user_has_rights(user=current_user, rights=PermissionRight.MANAGE_TEAMS)):
-        raise HTTPException(status_code=403, detail="Not enough permissions")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions")
 
     # Check rights for the new event data
     if team_in.event_id:
         event = session.get(Event, team_in.event_id)
         if not event:
-            raise HTTPException(status_code=404, detail="New event not found")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="New event not found")
 
         if not current_user.has_permissions(
                 module=PermissionModule.TEAM,
                 part=PermissionPart.ADMIN,
                 rights=PermissionRight.UPDATE,
         ) and not (event.user_has_rights(user=current_user, rights=PermissionRight.MANAGE_TEAMS)):
-            raise HTTPException(status_code=403, detail="Not enough permissions")
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions")
 
     # Update the team
     team = Team.update(db_obj=team, in_obj=team_in, session=session)
@@ -173,18 +173,18 @@ def delete_team(session: SessionDep,current_user: CurrentUser, id: RowId) -> Mes
     """
     team = session.get(Team, id)
     if not team:
-        raise HTTPException(status_code=404, detail="Team not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Team not found")
 
     event = session.get(Event, team.event_id)
     if not event:
-        raise HTTPException(status_code=404, detail="Event not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
 
     if not current_user.has_permissions(
         module=PermissionModule.TEAM,
         part=PermissionPart.ADMIN,
         rights=PermissionRight.DELETE,
     ) and not (event.user_has_rights(user=current_user, rights=PermissionRight.MANAGE_TEAMS)):
-        raise HTTPException(status_code=403, detail="Not enough permissions")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions")
 
     session.delete(team)
     session.commit()

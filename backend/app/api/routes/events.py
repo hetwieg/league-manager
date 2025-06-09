@@ -1,6 +1,6 @@
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, status
 from sqlmodel import func, select
 
 from app.api.deps import CurrentUser, SessionDep
@@ -83,14 +83,14 @@ def read_event(session: SessionDep, current_user: CurrentUser, id: RowId) -> Any
     """
     event = session.get(Event, id)
     if not event:
-        raise HTTPException(status_code=404, detail="Event not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
 
     if not current_user.has_permissions(
         module=PermissionModule.EVENT,
         part=PermissionPart.ADMIN,
         rights=PermissionRight.READ,
     ) and not (event.user_has_rights(user=current_user, rights=PermissionRight.READ)):
-        raise HTTPException(status_code=403, detail="Not enough permissions")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions")
 
     return event
 
@@ -107,7 +107,7 @@ def create_event(
         part=PermissionPart.ADMIN,
         rights=PermissionRight.CREATE,
     ):
-        raise HTTPException(status_code=403, detail="Not enough permissions")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions")
 
     event = Event.create(create_obj=event_in, session=session)
     event.add_user(user=current_user, rights=PermissionRight.ADMIN, session=session)
@@ -127,14 +127,14 @@ def update_event(
     """
     event = session.get(Event, id)
     if not event:
-        raise HTTPException(status_code=404, detail="Event not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
 
     if not current_user.has_permissions(
         module=PermissionModule.EVENT,
         part=PermissionPart.ADMIN,
         rights=PermissionRight.UPDATE,
     ) and not (event.user_has_rights(user=current_user, rights=PermissionRight.UPDATE)):
-        raise HTTPException(status_code=403, detail="Not enough permissions")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions")
 
     return Event.update(db_obj=event, in_obj=event_in, session=session)
 
@@ -150,14 +150,14 @@ def delete_event(
     """
     event = session.get(Event, id)
     if not event:
-        raise HTTPException(status_code=404, detail="Event not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
 
     if not current_user.has_permissions(
         module=PermissionModule.EVENT,
         part=PermissionPart.ADMIN,
         rights=PermissionRight.DELETE,
     ) and not (event.user_has_rights(user=current_user, rights=PermissionRight.DELETE)):
-        raise HTTPException(status_code=403, detail="Not enough permissions")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions")
 
     session.delete(event)
     session.commit()
@@ -180,14 +180,14 @@ def read_event_users(
 
     event = session.get(Event, event_id)
     if not event:
-        raise HTTPException(status_code=404, detail="Event not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
 
     if not current_user.has_permissions(
         module=PermissionModule.EVENT,
         part=PermissionPart.ADMIN,
         rights=PermissionRight.MANAGE_USERS,
     ) and not (event.user_has_rights(user=current_user, rights=PermissionRight.MANAGE_USERS)):
-        raise HTTPException(status_code=403, detail="Not enough permissions")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions")
 
     count_statement = (select(func.count())
                        .select_from(EventUserLink)
@@ -217,26 +217,26 @@ def create_event_user(
 
     if user_in.rights & ~PermissionRight.ADMIN:
         # FIXME: find a proper richts checker
-        raise HTTPException(status_code=400, detail="Invalid permission rights")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid permission rights")
 
     event = session.get(Event, event_id)
     if not event:
-        raise HTTPException(status_code=404, detail="Event not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
 
     if not current_user.has_permissions(
         module=PermissionModule.EVENT,
         part=PermissionPart.ADMIN,
         rights=PermissionRight.MANAGE_USERS,
     ) and not (event.user_has_rights(user=current_user, rights=(PermissionRight.MANAGE_USERS | user_in.rights))):
-        raise HTTPException(status_code=403, detail="Not enough permissions")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions")
 
     user = session.get(User, user_in.user_id)
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
     user_link = event.get_user_link(user)
     if user_link:
-        raise HTTPException(status_code=400, detail="User already part of this event")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User already part of this event")
 
     return event.add_user(user=user, rights=user_in.rights, session=session)
 
@@ -255,27 +255,27 @@ def update_user_in_event(
 
     event = session.get(Event, event_id)
     if not event:
-        raise HTTPException(status_code=404, detail="Event not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
 
     user = session.get(User, user_id)
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
     valid_flags = sum(flag.value for flag in PermissionRight)
     if user_in.rights & ~valid_flags:
         # FIXME: find a proper richts checker
-        raise HTTPException(status_code=400, detail="Invalid permission rights")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid permission rights")
 
     if not current_user.has_permissions(
         module=PermissionModule.EVENT,
         part=PermissionPart.ADMIN,
         rights=PermissionRight.MANAGE_USERS,
     ) and not (event.user_has_rights(user=current_user, rights=(PermissionRight.MANAGE_USERS | user_in.rights))):
-        raise HTTPException(status_code=403, detail="Not enough permissions")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions")
 
     user_link = event.get_user_link(user)
     if not user_link:
-        raise HTTPException(status_code=404, detail="User is not part of this event")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User is not part of this event")
 
     return event.update_user(user=user, rights=user_in.rights, session=session)
 
@@ -289,11 +289,11 @@ def remove_user_from_event(
     """
     event = session.get(Event, event_id)
     if not event:
-        raise HTTPException(status_code=404, detail="Event not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
 
     user = session.get(User, user_id)
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
     if not current_user.has_permissions(
         module=PermissionModule.EVENT,
@@ -301,14 +301,14 @@ def remove_user_from_event(
         rights=PermissionRight.MANAGE_USERS,
     ):
         if current_user.id == user.id:
-            raise HTTPException(status_code=403, detail="Users are not allowed to delete themselves when they are not an super admin")
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Users are not allowed to delete themselves when they are not an super admin")
 
         if not event.user_has_rights(user=current_user, rights=PermissionRight.MANAGE_USERS):
-            raise HTTPException(status_code=403, detail="Not enough permissions")
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions")
 
     user_link = event.get_user_link(user)
     if not user_link:
-        raise HTTPException(status_code=404, detail="User is not part of this event")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User is not part of this event")
 
     event.remove_user(user=user, session=session)
     return Message(

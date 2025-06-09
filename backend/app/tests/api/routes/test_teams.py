@@ -1,5 +1,6 @@
 import uuid
 
+from fastapi import status
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
@@ -23,7 +24,7 @@ def test_create_team(client: TestClient, superuser_token_headers: dict[str, str]
         headers=superuser_token_headers,
         json=data,
     )
-    assert response.status_code == 200
+    assert response.status_code == status.HTTP_200_OK
     content = response.json()
     assert content["theme_name"] == data["theme_name"]
     assert content["event_id"] == str(event.id)
@@ -38,7 +39,7 @@ def test_create_team_without_event(client: TestClient, superuser_token_headers: 
         headers=superuser_token_headers,
         json=data,
     )
-    assert response.status_code == 422
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     assert response.json()["detail"][0]["loc"] == ["body", "event_id"]
 
 
@@ -52,7 +53,7 @@ def test_create_team_with_incorrect_event(client: TestClient, superuser_token_he
         headers=superuser_token_headers,
         json=data,
     )
-    assert response.status_code == 404
+    assert response.status_code == status.HTTP_404_NOT_FOUND
     assert response.json()["detail"] == "Event not found"
 
 def test_read_team(client: TestClient, superuser_token_headers: dict[str, str], db: Session) -> None:
@@ -61,7 +62,7 @@ def test_read_team(client: TestClient, superuser_token_headers: dict[str, str], 
         f"{settings.API_V1_STR}/teams/{team.id}",
         headers=superuser_token_headers,
     )
-    assert response.status_code == 200
+    assert response.status_code == status.HTTP_200_OK
     content = response.json()
     assert content["id"] == str(team.id)
     assert content["theme_name"] == team.theme_name
@@ -72,7 +73,7 @@ def test_read_team_not_found(client: TestClient, superuser_token_headers: dict[s
         f"{settings.API_V1_STR}/teams/{uuid.uuid4()}",
         headers=superuser_token_headers,
     )
-    assert response.status_code == 404
+    assert response.status_code == status.HTTP_404_NOT_FOUND
     assert response.json()["detail"] == "Team not found"
 
 
@@ -82,7 +83,7 @@ def test_read_event_not_enough_permissions(client: TestClient, normal_user_token
         f"{settings.API_V1_STR}/teams/{team.id}",
         headers=normal_user_token_headers,
     )
-    assert response.status_code == 403
+    assert response.status_code == status.HTTP_403_FORBIDDEN
     assert response.json()["detail"] == "Not enough permissions"
 
 
@@ -94,7 +95,7 @@ def test_read_team_with_event_user(client: TestClient, event_user_token_headers:
         headers=event_user_token_headers.headers,
     )
 
-    assert response.status_code == 200
+    assert response.status_code == status.HTTP_200_OK
     content = response.json()
     assert content["id"] == str(team.id)
     assert content["theme_name"] == team.theme_name
@@ -108,7 +109,7 @@ def test_read_teams(client: TestClient, superuser_token_headers: dict[str, str],
         f"{settings.API_V1_STR}/teams/",
         headers=superuser_token_headers,
     )
-    assert response.status_code == 200
+    assert response.status_code == status.HTTP_200_OK
     content = response.json()
     assert "count" in content
     assert content["count"] >= 2
@@ -124,7 +125,7 @@ def test_read_teams_with_normal_user(client: TestClient, normal_user_token_heade
         f"{settings.API_V1_STR}/teams/",
         headers=normal_user_token_headers,
     )
-    assert response.status_code == 200
+    assert response.status_code == status.HTTP_200_OK
     content = response.json()
     assert "count" in content
     assert content["count"] == 0
@@ -144,7 +145,7 @@ def test_read_teams_with_event_user_readonly(client: TestClient, db: Session) ->
         headers=authentication_token_from_user(db=db, user=user, client=client),
     )
 
-    assert response.status_code == 200
+    assert response.status_code == status.HTTP_200_OK
     content = response.json()
     assert "count" in content
     assert content["count"] == 1
@@ -164,7 +165,7 @@ def test_read_teams_with_event_user_team_manager(client: TestClient, db: Session
         headers=authentication_token_from_user(db=db, user=user, client=client),
     )
 
-    assert response.status_code == 200
+    assert response.status_code == status.HTTP_200_OK
     content = response.json()
     assert "count" in content
     assert content["count"] == 1
@@ -181,7 +182,7 @@ def test_update_team_name(client: TestClient, superuser_token_headers: dict[str,
         headers=superuser_token_headers,
         json=data,
     )
-    assert response.status_code == 200
+    assert response.status_code == status.HTTP_200_OK
     content = response.json()
     assert content["id"] == str(team.id)
     assert content["theme_name"] == data["theme_name"]
@@ -195,7 +196,7 @@ def test_update_team_not_found(client: TestClient, superuser_token_headers: dict
         headers=superuser_token_headers,
         json=data,
     )
-    assert response.status_code == 404
+    assert response.status_code == status.HTTP_404_NOT_FOUND
     assert response.json()["detail"] == "Team not found"
 
 
@@ -207,7 +208,7 @@ def test_update_team_not_enough_permissions(client: TestClient, normal_user_toke
         headers=normal_user_token_headers,
         json=data,
     )
-    assert response.status_code == 403
+    assert response.status_code == status.HTTP_403_FORBIDDEN
     assert response.json()["detail"] == "Not enough permissions"
 
 
@@ -219,7 +220,7 @@ def test_update_team_name_with_event_permissions(client: TestClient, event_user_
         headers=event_user_token_headers.headers,
         json=data,
     )
-    assert response.status_code == 200
+    assert response.status_code == status.HTTP_200_OK
     content = response.json()
     assert content["id"] == str(team.id)
     assert content["theme_name"] == data["theme_name"]
@@ -236,7 +237,7 @@ def test_update_team_event(client: TestClient, superuser_token_headers: dict[str
         headers=superuser_token_headers,
         json=data,
     )
-    assert response.status_code == 200
+    assert response.status_code == status.HTTP_200_OK
     content = response.json()
     assert content["id"] == str(team.id)
     assert content["theme_name"] == team.theme_name
@@ -252,7 +253,7 @@ def test_update_team_event_not_found(client: TestClient, superuser_token_headers
         headers=superuser_token_headers,
         json=data,
     )
-    assert response.status_code == 404
+    assert response.status_code == status.HTTP_404_NOT_FOUND
     assert response.json()["detail"] == "New event not found"
 
 
@@ -269,7 +270,7 @@ def test_update_team_event_with_event_user(client: TestClient, event_user_token_
         json=data,
     )
 
-    assert response.status_code == 200
+    assert response.status_code == status.HTTP_200_OK
     content = response.json()
     assert content["id"] == str(team.id)
     assert content["theme_name"] == team.theme_name
@@ -288,7 +289,7 @@ def test_update_team_event_with_event_user_not_enough_permissions(client: TestCl
         json=data,
     )
 
-    assert response.status_code == 403
+    assert response.status_code == status.HTTP_403_FORBIDDEN
     assert response.json()["detail"] == "Not enough permissions"
 
 
@@ -298,7 +299,7 @@ def test_delete_team(client: TestClient, superuser_token_headers: dict[str, str]
         f"{settings.API_V1_STR}/teams/{team.id}",
         headers=superuser_token_headers,
     )
-    assert response.status_code == 200
+    assert response.status_code == status.HTTP_200_OK
     assert response.json()["message"] == "Team deleted successfully"
 
 
@@ -307,7 +308,7 @@ def test_delete_team_not_found(client: TestClient, superuser_token_headers: dict
         f"{settings.API_V1_STR}/teams/{uuid.uuid4()}",
         headers=superuser_token_headers,
     )
-    assert response.status_code == 404
+    assert response.status_code == status.HTTP_404_NOT_FOUND
     assert response.json()["detail"] == "Team not found"
 
 
@@ -317,7 +318,7 @@ def test_delete_not_enough_permissions(client: TestClient, normal_user_token_hea
         f"{settings.API_V1_STR}/teams/{team.id}",
         headers=normal_user_token_headers,
     )
-    assert response.status_code == 403
+    assert response.status_code == status.HTTP_403_FORBIDDEN
     assert response.json()["detail"] == "Not enough permissions"
 
 
@@ -327,5 +328,5 @@ def test_delete_team_with_event_user(client: TestClient, event_user_token_header
         f"{settings.API_V1_STR}/teams/{team.id}",
         headers=event_user_token_headers.headers,
     )
-    assert response.status_code == 200
+    assert response.status_code == status.HTTP_200_OK
     assert response.json()["message"] == "Team deleted successfully"

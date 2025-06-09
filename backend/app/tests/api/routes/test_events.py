@@ -1,6 +1,7 @@
 import uuid
 
 import pytest
+from fastapi import status
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
@@ -22,7 +23,7 @@ def test_create_event(client: TestClient, superuser_token_headers: dict[str, str
         headers=superuser_token_headers,
         json=data,
     )
-    assert response.status_code == 200
+    assert response.status_code == status.HTTP_200_OK
     content = response.json()
     assert content["name"] == data["name"]
     assert content["contact"] == data["contact"]
@@ -43,7 +44,7 @@ def test_create_event_no_permission(client: TestClient, normal_user_token_header
         headers=normal_user_token_headers,
         json=data,
     )
-    assert response.status_code == 403
+    assert response.status_code == status.HTTP_403_FORBIDDEN
     assert response.json()["detail"] == "Not enough permissions"
 
 
@@ -56,7 +57,7 @@ def test_read_event(
         f"{settings.API_V1_STR}/events/{event.id}",
         headers=superuser_token_headers,
     )
-    assert response.status_code == 200
+    assert response.status_code == status.HTTP_200_OK
     content = response.json()
     assert content["name"] == event.name
     assert content["contact"] == event.contact
@@ -73,7 +74,7 @@ def test_read_event_not_found(
         f"{settings.API_V1_STR}/events/{uuid.uuid4()}",
         headers=superuser_token_headers,
     )
-    assert response.status_code == 404
+    assert response.status_code == status.HTTP_404_NOT_FOUND
     assert response.json()["detail"] == "Event not found"
 
 
@@ -85,7 +86,7 @@ def test_read_event_not_enough_permissions(
         f"{settings.API_V1_STR}/events/{event.id}",
         headers=normal_user_token_headers,
     )
-    assert response.status_code == 403
+    assert response.status_code == status.HTTP_403_FORBIDDEN
     assert response.json()["detail"] == "Not enough permissions"
 
 
@@ -97,7 +98,7 @@ def test_read_event_with_event_user(
         f"{settings.API_V1_STR}/events/{event.id}",
         headers=event_user_token_headers.headers,
     )
-    assert response.status_code == 200
+    assert response.status_code == status.HTTP_200_OK
     content = response.json()
     assert content["name"] == event.name
     assert content["contact"] == event.contact
@@ -116,7 +117,7 @@ def test_read_events(
         f"{settings.API_V1_STR}/events/",
         headers=superuser_token_headers,
     )
-    assert response.status_code == 200
+    assert response.status_code == status.HTTP_200_OK
     content = response.json()
     assert "count" in content
     assert content["count"] >= 2
@@ -136,7 +137,7 @@ def test_read_events_with_event_user(
         f"{settings.API_V1_STR}/events/",
         headers=authentication_token_from_user(db=db, user=user, client=client),
     )
-    assert response.status_code == 200
+    assert response.status_code == status.HTTP_200_OK
     content = response.json()
     assert "count" in content
     assert content["count"] == 1
@@ -158,7 +159,7 @@ def test_update_event(
         headers=superuser_token_headers,
         json=data,
     )
-    assert response.status_code == 200
+    assert response.status_code == status.HTTP_200_OK
     content = response.json()
     assert content["name"] == data["name"]
     assert content["contact"] == data["contact"]
@@ -177,7 +178,7 @@ def test_update_event_not_found(
         headers=superuser_token_headers,
         json=data,
     )
-    assert response.status_code == 404
+    assert response.status_code == status.HTTP_404_NOT_FOUND
     assert response.json()["detail"] == "Event not found"
 
 
@@ -191,7 +192,7 @@ def test_update_event_not_enough_permissions(
         headers=normal_user_token_headers,
         json=data,
     )
-    assert response.status_code == 403
+    assert response.status_code == status.HTTP_403_FORBIDDEN
     assert response.json()["detail"] == "Not enough permissions"
 
 
@@ -208,7 +209,7 @@ def test_update_event_with_eventuser(
         headers=event_user_token_headers.headers,
         json=data,
     )
-    assert response.status_code == 200
+    assert response.status_code == status.HTTP_200_OK
     content = response.json()
     assert content["name"] == data["name"]
     assert content["contact"] == data["contact"]
@@ -226,7 +227,7 @@ def test_delete_event(
         f"{settings.API_V1_STR}/events/{event.id}",
         headers=superuser_token_headers,
     )
-    assert response.status_code == 200
+    assert response.status_code == status.HTTP_200_OK
     assert response.json()["message"] == "Event deleted successfully"
 
 
@@ -237,7 +238,7 @@ def test_delete_event_not_found(
         f"{settings.API_V1_STR}/events/{uuid.uuid4()}",
         headers=superuser_token_headers,
     )
-    assert response.status_code == 404
+    assert response.status_code == status.HTTP_404_NOT_FOUND
     content = response.json()
     assert content["detail"] == "Event not found"
 
@@ -250,7 +251,7 @@ def test_delete_event_not_enough_permissions(
         f"{settings.API_V1_STR}/events/{event.id}",
         headers=normal_user_token_headers,
     )
-    assert response.status_code == 403
+    assert response.status_code == status.HTTP_403_FORBIDDEN
     assert response.json()["detail"] == "Not enough permissions"
 
 
@@ -265,7 +266,7 @@ def test_delete_event_admin_user(
         f"{settings.API_V1_STR}/events/{event.id}",
         headers=authentication_token_from_user(db=db, user=user, client=client),
     )
-    assert response.status_code == 200
+    assert response.status_code == status.HTTP_200_OK
     content = response.json()
     assert content["message"] == "Event deleted successfully"
 
@@ -280,7 +281,7 @@ def test_delete_event_not_enough_permissions_for_this_event(
         f"{settings.API_V1_STR}/events/{event.id}",
         headers=authentication_token_from_user(db=db, user=user, client=client),
     )
-    assert response.status_code == 403
+    assert response.status_code == status.HTTP_403_FORBIDDEN
     assert response.json()["detail"] == "Not enough permissions"
 
 
@@ -295,7 +296,7 @@ def test_delete_event_event_user_read_only_rights(
         f"{settings.API_V1_STR}/events/{event.id}",
         headers=authentication_token_from_user(db=db, user=user, client=client),
     )
-    assert response.status_code == 403
+    assert response.status_code == status.HTTP_403_FORBIDDEN
     assert response.json()["detail"] == "Not enough permissions"
 
 
@@ -312,7 +313,7 @@ def test_read_all_event_users(
         f"{settings.API_V1_STR}/events/{event.id}/users",
         headers=superuser_token_headers,
     )
-    assert response.status_code == 200
+    assert response.status_code == status.HTTP_200_OK
     content = response.json()
     assert "count" in content
     assert content["count"] == 2
@@ -330,7 +331,7 @@ def test_read_all_event_users_no_permission(
         f"{settings.API_V1_STR}/events/{event.id}/users",
         headers=normal_user_token_headers,
     )
-    assert response.status_code == 403
+    assert response.status_code == status.HTTP_403_FORBIDDEN
     assert response.json()["detail"] == "Not enough permissions"
 
 
@@ -345,7 +346,7 @@ def test_read_all_event_users_with_event_user(
         f"{settings.API_V1_STR}/events/{event.id}/users",
         headers=authentication_token_from_user(db=db, user=user, client=client),
     )
-    assert response.status_code == 200
+    assert response.status_code == status.HTTP_200_OK
     content = response.json()
     assert "count" in content
     assert content["count"] == 1
@@ -365,7 +366,7 @@ def test_read_all_event_users_with_event_user_no_permission(
         f"{settings.API_V1_STR}/events/{event.id}/users",
         headers=authentication_token_from_user(db=db, user=user, client=client),
     )
-    assert response.status_code == 403
+    assert response.status_code == status.HTTP_403_FORBIDDEN
     assert response.json()["detail"] == "Not enough permissions"
 
 
@@ -376,7 +377,7 @@ def test_add_user_to_event_not_found(
         f"{settings.API_V1_STR}/events/{uuid.uuid4()}/users",
         headers=superuser_token_headers,
     )
-    assert response.status_code == 404
+    assert response.status_code == status.HTTP_404_NOT_FOUND
     assert response.json()["detail"] == "Event not found"
 
 
@@ -395,7 +396,7 @@ def test_add_user_to_event(
         headers=superuser_token_headers,
         json=data,
     )
-    assert response.status_code == 200
+    assert response.status_code == status.HTTP_200_OK
     content = response.json()
     assert "rights" in content
     assert content["rights"] == PermissionRight.READ
@@ -417,7 +418,7 @@ def test_add_user_to_event_event_not_found(
         headers=superuser_token_headers,
         json=data,
     )
-    assert response.status_code == 404
+    assert response.status_code == status.HTTP_404_NOT_FOUND
     assert response.json()["detail"] == "Event not found"
 
 
@@ -435,7 +436,7 @@ def test_add_user_to_event_user_not_found(
         headers=superuser_token_headers,
         json=data,
     )
-    assert response.status_code == 404
+    assert response.status_code == status.HTTP_404_NOT_FOUND
     assert response.json()["detail"] == "User not found"
 
 
@@ -455,7 +456,7 @@ def test_add_user_to_event_already_exists(
         headers=superuser_token_headers,
         json=data,
     )
-    assert response.status_code == 400
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert response.json()["detail"] == "User already part of this event"
 
 
@@ -474,7 +475,7 @@ def test_add_user_to_event_no_permissions(
         headers=normal_user_token_headers,
         json=data,
     )
-    assert response.status_code == 403
+    assert response.status_code == status.HTTP_403_FORBIDDEN
     assert response.json()["detail"] == "Not enough permissions"
 
 
@@ -493,7 +494,7 @@ def test_add_user_to_event_unknown_rights(
         headers=superuser_token_headers,
         json=data,
     )
-    assert response.status_code == 400
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert response.json()["detail"] == "Invalid permission rights"
 
 
@@ -516,7 +517,7 @@ def test_add_user_with_more_rights_than_current_user(
         headers=authentication_token_from_user(db=db, user=limited_user, client=client),
         json=data,
     )
-    assert response.status_code == 403
+    assert response.status_code == status.HTTP_403_FORBIDDEN
     assert response.json()["detail"] == "Not enough permissions"
 
 
@@ -536,7 +537,7 @@ def test_add_user_rights_combined(
         json=data,
     )
 
-    assert response.status_code == 200
+    assert response.status_code == status.HTTP_200_OK
     content = response.json()
     assert "rights" in content
     assert content["rights"] == data["rights"]
@@ -558,7 +559,7 @@ def test_update_user_inside_event(
         headers=superuser_token_headers,
         json=data,
     )
-    assert response.status_code == 200
+    assert response.status_code == status.HTTP_200_OK
     content = response.json()
     assert "rights" in content
     assert content["rights"] == data["rights"]
@@ -579,7 +580,7 @@ def test_update_event_user_event_not_found(
         headers=superuser_token_headers,
         json=data,
     )
-    assert response.status_code == 404
+    assert response.status_code == status.HTTP_404_NOT_FOUND
     assert response.json()["detail"] == "Event not found"
 
 
@@ -596,7 +597,7 @@ def test_update_event_user_user_not_found(
         headers=superuser_token_headers,
         json=data,
     )
-    assert response.status_code == 404
+    assert response.status_code == status.HTTP_404_NOT_FOUND
     assert response.json()["detail"] == "User not found"
 
 
@@ -615,7 +616,7 @@ def test_update_event_user_unknown_rights(
         headers=superuser_token_headers,
         json=data,
     )
-    assert response.status_code == 400
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert response.json()["detail"] == "Invalid permission rights"
 
 
@@ -634,7 +635,7 @@ def test_update_event_user_not_enough_permissions(
         headers=normal_user_token_headers,
         json=data,
     )
-    assert response.status_code == 403
+    assert response.status_code == status.HTTP_403_FORBIDDEN
     assert response.json()["detail"] == "Not enough permissions"
 
 
@@ -658,7 +659,7 @@ def test_update_event_user_with_event_user_same_event(
         headers=authentication_token_from_user(db=db, user=user1, client=client),
         json=data,
     )
-    assert response.status_code == 200
+    assert response.status_code == status.HTTP_200_OK
     content = response.json()
     assert content["rights"] == data["rights"]
     assert content["user_id"] == str(user2.id)
@@ -686,7 +687,7 @@ def test_update_event_user_from_other_event_forbidden(
         headers=authentication_token_from_user(db=db, user=user1, client=client),
         json=data,
     )
-    assert response.status_code == 403
+    assert response.status_code == status.HTTP_403_FORBIDDEN
     assert response.json()["detail"] == "Not enough permissions"
 
 
@@ -711,7 +712,7 @@ def test_update_event_user_from_other_event_thru_own_event(
         headers=authentication_token_from_user(db=db, user=user1, client=client),
         json=data,
     )
-    assert response.status_code == 404
+    assert response.status_code == status.HTTP_404_NOT_FOUND
     assert response.json()["detail"] == "User is not part of this event"
 
 
@@ -734,7 +735,7 @@ def test_update_user_rights_combined(
         json=data,
     )
 
-    assert response.status_code == 200
+    assert response.status_code == status.HTTP_200_OK
     content = response.json()
     assert "rights" in content
     assert content["rights"] == data["rights"]
@@ -754,7 +755,7 @@ def test_remove_user_from_event(
         headers=superuser_token_headers,
     )
 
-    assert response.status_code == 200
+    assert response.status_code == status.HTTP_200_OK
     assert response.json()["message"] == "User removed successfully"
     # assert not event.get_user_link(user)
 
@@ -771,7 +772,7 @@ def test_remove_user_from_event_event_not_found(
         headers=superuser_token_headers,
     )
 
-    assert response.status_code == 404
+    assert response.status_code == status.HTTP_404_NOT_FOUND
     assert response.json()["detail"] == "Event not found"
 
 
@@ -785,7 +786,7 @@ def test_remove_user_from_event_user_not_found(
         headers=superuser_token_headers,
     )
 
-    assert response.status_code == 404
+    assert response.status_code == status.HTTP_404_NOT_FOUND
     assert response.json()["detail"] == "User not found"
 
 
@@ -800,7 +801,7 @@ def test_remove_user_from_event_user_not_in_event(
         headers=superuser_token_headers,
     )
 
-    assert response.status_code == 404
+    assert response.status_code == status.HTTP_404_NOT_FOUND
     assert response.json()["detail"] == "User is not part of this event"
 
 
@@ -819,7 +820,7 @@ def test_remove_user_from_event_insufficient_permissions(
         headers=authentication_token_from_user(db=db, user=limited_user, client=client),
     )
 
-    assert response.status_code == 403
+    assert response.status_code == status.HTTP_403_FORBIDDEN
     assert response.json()["detail"] == "Not enough permissions"
 
 
@@ -835,5 +836,5 @@ def test_remove_own_user_from_event(
         headers=authentication_token_from_user(db=db, user=user, client=client),
     )
 
-    assert response.status_code == 403
+    assert response.status_code == status.HTTP_403_FORBIDDEN
     assert response.json()["detail"] == "Users are not allowed to delete themselves when they are not an super admin"
