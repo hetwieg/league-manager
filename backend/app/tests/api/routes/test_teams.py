@@ -127,7 +127,7 @@ def test_read_teams_with_normal_user(client: TestClient, normal_user_token_heade
 
 
 def test_read_teams_with_event_user(client: TestClient, event_user_token_headers: EventUserHeader, db: Session) -> None:
-    team = create_random_team(db, event=event_user_token_headers.event)
+    create_random_team(db, event=event_user_token_headers.event)
 
     response = client.get(
         f"{settings.API_V1_STR}/teams/",

@@ -101,7 +101,6 @@ def test_use_api_key_user_inactive(client: TestClient, db: Session) -> None:
     api_key = ApiKey.create(session=db, create_obj=create_obj)
 
     r = client.get(f"{settings.API_V1_STR}/login/api-key/{api_key.api_key}")
-    tokens = r.json()
     assert r.status_code == 400
 
 
