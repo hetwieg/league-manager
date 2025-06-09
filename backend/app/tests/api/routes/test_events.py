@@ -7,7 +7,7 @@ from app.core.config import settings
 from app.tests.utils.event import create_random_event
 
 
-def test_event(client: TestClient, superuser_token_headers: dict[str, str]) -> None:
+def test_create_event(client: TestClient, superuser_token_headers: dict[str, str]) -> None:
     data = {"name": "Foo", "contact": "Someone"}
 
     response = client.post(
@@ -38,9 +38,9 @@ def test_read_event(
     assert content["name"] == event.name
     assert content["contact"] == event.contact
     assert content["id"] == str(event.id)
-    assert content["is_active"] == str(event.is_active)
-    assert content["start_at"] == str(event.start_at)
-    assert content["end_at"] == str(event.end_at)
+    assert content["is_active"] == event.is_active
+    assert str(content["start_at"]) == str(event.start_at)
+    assert str(content["end_at"]) == str(event.end_at)
 
 
 def test_read_event_not_found(
@@ -58,9 +58,9 @@ def test_read_event_not_found(
 def test_read_event_not_enough_permissions(
     client: TestClient, normal_user_token_headers: dict[str, str], db: Session
 ) -> None:
-    item = create_random_event(db)
+    event = create_random_event(db)
     response = client.get(
-        f"{settings.API_V1_STR}/events/{item.id}",
+        f"{settings.API_V1_STR}/events/{event.id}",
         headers=normal_user_token_headers,
     )
     assert response.status_code == 400
@@ -97,9 +97,9 @@ def test_update_event(
     assert content["name"] == data["name"]
     assert content["contact"] == data["contact"]
     assert content["id"] == str(event.id)
-    assert "is_active" == str(event.is_active)
-    assert "start_at" == str(event.start_at)
-    assert "end_at" == str(event.end_at)
+    assert content["is_active"] == event.is_active
+    assert str(content["start_at"]) == str(event.start_at)
+    assert str(content["end_at"]) == str(event.end_at)
 
 
 def test_update_event_not_found(
@@ -122,7 +122,7 @@ def test_update_event_not_enough_permissions(
     event = create_random_event(db)
     data = {"name": "Updated name", "contact": "Updated contact"}
     response = client.put(
-        f"{settings.API_V1_STR}/items/{event.id}",
+        f"{settings.API_V1_STR}/events/{event.id}",
         headers=normal_user_token_headers,
         json=data,
     )
