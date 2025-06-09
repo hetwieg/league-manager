@@ -9,6 +9,7 @@ from app.core.config import settings
 from app.tests.conftest import EventUserHeader
 from app.tests.utils.event import create_random_event
 from app.tests.utils.team import create_random_team
+from app.tests.utils.user import create_random_user, authentication_token_from_user
 
 
 def test_create_team(client: TestClient, superuser_token_headers: dict[str, str], db: Session) -> None:
@@ -109,9 +110,11 @@ def test_read_teams(client: TestClient, superuser_token_headers: dict[str, str],
     )
     assert response.status_code == 200
     content = response.json()
+    assert "count" in content
+    assert content["count"] >= 2
     assert "data" in content
     assert isinstance(content["data"], list)
-    assert content["count"] >= 2
+    assert len(content["data"]) <= content["count"]
 
 
 def test_read_teams_with_normal_user(client: TestClient, normal_user_token_headers: dict[str, str], db: Session) -> None:
@@ -123,22 +126,51 @@ def test_read_teams_with_normal_user(client: TestClient, normal_user_token_heade
     )
     assert response.status_code == 200
     content = response.json()
+    assert "count" in content
     assert content["count"] == 0
+    assert "data" in content
+    assert isinstance(content["data"], list)
+    assert len(content["data"]) == 0
 
 
-def test_read_teams_with_event_user(client: TestClient, event_user_token_headers: EventUserHeader, db: Session) -> None:
-    create_random_team(db, event=event_user_token_headers.event)
+def test_read_teams_with_event_user_readonly(client: TestClient, db: Session) -> None:
+    event = create_random_event(db)
+    user = create_random_user(db)
+    event.add_user(user=user, rights=PermissionRight.READ, session=db)
+    create_random_team(db, event=event)
 
     response = client.get(
         f"{settings.API_V1_STR}/teams/",
-        headers=event_user_token_headers.headers,
+        headers=authentication_token_from_user(db=db, user=user, client=client),
     )
 
     assert response.status_code == 200
     content = response.json()
+    assert "count" in content
+    assert content["count"] == 1
     assert "data" in content
     assert isinstance(content["data"], list)
-    assert content["count"] >= 1
+    assert len(content["data"]) <= content["count"]
+
+
+def test_read_teams_with_event_user_team_manager(client: TestClient, db: Session) -> None:
+    event = create_random_event(db)
+    user = create_random_user(db)
+    event.add_user(user=user, rights=PermissionRight.MANAGE_TEAMS, session=db)
+    create_random_team(db, event=event)
+
+    response = client.get(
+        f"{settings.API_V1_STR}/teams/",
+        headers=authentication_token_from_user(db=db, user=user, client=client),
+    )
+
+    assert response.status_code == 200
+    content = response.json()
+    assert "count" in content
+    assert content["count"] == 1
+    assert "data" in content
+    assert isinstance(content["data"], list)
+    assert len(content["data"]) <= content["count"]
 
 
 def test_update_team_name(client: TestClient, superuser_token_headers: dict[str, str], db: Session) -> None:

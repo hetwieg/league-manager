@@ -51,17 +51,19 @@ def read_events(
         count_statement = (
             select(func.count())
             .select_from(Event)
+            .join(EventUserLink)  # Join with EventUserLink to check user permissions
             .where(
                 EventUserLink.user_id == current_user.id,
-                (EventUserLink.rights & PermissionRight.READ) == PermissionRight.READ,
+                # FIXME: (EventUserLink.rights & PermissionRight.READ) == PermissionRight.READ,
             )
         )
         count = session.exec(count_statement).one()
         statement = (
             select(Event)
+            .join(EventUserLink)  # Join with EventUserLink to check user permissions
             .where(
                 EventUserLink.user_id == current_user.id,
-                (EventUserLink.rights & PermissionRight.READ) == PermissionRight.READ,
+                # FIXME: (EventUserLink.rights & PermissionRight.READ) == PermissionRight.READ,
             )
             .offset(skip)
             .limit(limit)

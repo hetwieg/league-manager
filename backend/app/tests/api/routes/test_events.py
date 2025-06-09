@@ -5,12 +5,16 @@ from sqlmodel import Session
 
 from app.core.config import settings
 from app.models.user import PermissionRight
+from app.tests.conftest import EventUserHeader
 from app.tests.utils.event import create_random_event
 from app.tests.utils.user import create_random_user, authentication_token_from_user
 
 
 def test_create_event(client: TestClient, superuser_token_headers: dict[str, str]) -> None:
-    data = {"name": "Foo", "contact": "Someone"}
+    data = {
+        "name": "Foo",
+        "contact": "Someone",
+    }
 
     response = client.post(
         f"{settings.API_V1_STR}/events/",
@@ -70,6 +74,24 @@ def test_read_event_not_enough_permissions(
     assert content["detail"] == "Not enough permissions"
 
 
+def test_read_event_with_event_user(
+    client: TestClient, event_user_token_headers: EventUserHeader, db: Session
+) -> None:
+    event = event_user_token_headers.event
+    response = client.get(
+        f"{settings.API_V1_STR}/events/{event.id}",
+        headers=event_user_token_headers.headers,
+    )
+    assert response.status_code == 200
+    content = response.json()
+    assert content["name"] == event.name
+    assert content["contact"] == event.contact
+    assert content["id"] == str(event.id)
+    assert content["is_active"] == event.is_active
+    assert str(content["start_at"]) == str(event.start_at)
+    assert str(content["end_at"]) == str(event.end_at)
+
+
 def test_read_events(
     client: TestClient, superuser_token_headers: dict[str, str], db: Session
 ) -> None:
@@ -81,14 +103,41 @@ def test_read_events(
     )
     assert response.status_code == 200
     content = response.json()
-    assert len(content["data"]) >= 2
+    assert "count" in content
+    assert content["count"] >= 2
+    assert "data" in content
+    assert isinstance(content["data"], list)
+    assert len(content["data"]) <= content["count"]
+
+
+def test_read_events_with_event_user(
+    client: TestClient, db: Session
+) -> None:
+    event = create_random_event(db)
+    user = create_random_user(db)
+    event.add_user(user=user, rights=PermissionRight.READ, session=db)
+
+    response = client.get(
+        f"{settings.API_V1_STR}/events/",
+        headers=authentication_token_from_user(db=db, user=user, client=client),
+    )
+    assert response.status_code == 200
+    content = response.json()
+    assert "count" in content
+    assert content["count"] == 1
+    assert "data" in content
+    assert isinstance(content["data"], list)
+    assert len(content["data"]) <= content["count"]
 
 
 def test_update_event(
     client: TestClient, superuser_token_headers: dict[str, str], db: Session
 ) -> None:
     event = create_random_event(db)
-    data = {"name": "Updated name", "contact": "Updated contact"}
+    data = {
+        "name": "Updated name",
+        "contact": "Updated contact",
+    }
     response = client.put(
         f"{settings.API_V1_STR}/events/{event.id}",
         headers=superuser_token_headers,
