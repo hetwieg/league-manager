@@ -200,7 +200,7 @@ def add_user_to_event(
     event.add_user(user=user, rights=rights_in.rights, session=session)
     return Message(
         message="User added successfully"
-    )  # TODO: Return event or event_users
+    )
 
 
 @router.delete("/{id}/users/{user_id}", tags=[ApiTags.USERS])
@@ -228,7 +228,7 @@ def remove_user_from_event(
     event.remove_user(user=user, session=session)
     return Message(
         message="User removed successfully"
-    )  # TODO: Return event or event_users
+    )
 
 
 # endregion
