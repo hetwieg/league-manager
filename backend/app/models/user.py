@@ -26,6 +26,7 @@ class PermissionModule(DocumentedStrEnum):
     SYSTEM = auto_enum()
     USER = auto_enum()
     EVENT = auto_enum()
+    TEAM = auto_enum()
 
 
 class PermissionPart(DocumentedStrEnum):
@@ -40,9 +41,9 @@ class PermissionRight(DocumentedIntFlag):
     DELETE = auto_enum()
 
     MANAGE_USERS = auto_enum()
-    MANGE_TEAMS = auto_enum()
+    MANAGE_TEAMS = auto_enum()
 
-    ADMIN = CREATE | READ | UPDATE | DELETE | MANAGE_USERS | MANGE_TEAMS
+    ADMIN = CREATE | READ | UPDATE | DELETE | MANAGE_USERS | MANAGE_TEAMS
 
 
 class PermissionRightObject(BaseSQLModel):

@@ -2,6 +2,7 @@ from fastapi import APIRouter
 
 from app.api.routes import (
     events,
+    teams,
     login,
     private,
     users,
@@ -16,6 +17,7 @@ api_router.include_router(utils.router)
 
 
 api_router.include_router(events.router)
+api_router.include_router(teams.router)
 
 
 if settings.ENVIRONMENT == "local":

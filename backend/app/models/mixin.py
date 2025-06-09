@@ -10,7 +10,7 @@ from .base import RowId as RowIdType
 
 
 class Name(BaseModel):
-    name: str | None = Field(default=None, nullable=False, unique=True, max_length=255)
+    name: str | None = Field(default=None, nullable=False, unique=False, max_length=255)
 
 
 class FullName(BaseModel):

@@ -5,6 +5,10 @@ from app.models.event import (
     Event,
     EventCreate,
 )
+from app.models.team import (
+    Team,
+    TeamCreate,
+)
 from app.models.user import (
     Permission,
     PermissionModule,
@@ -118,6 +122,16 @@ def init_db(session: Session) -> None:
         )
         event = Event.create(session=session, create_obj=event_in)
     event.add_user(user, PermissionRight.ADMIN, session=session)
+
+    team = session.exec(
+        select(Event).where(Team.theme_name == "Laaiend vuur 熾熱的火 🔥")
+    ).first()
+    if not team:
+        team_in = TeamCreate(
+            theme_name="Laaiend vuur 熾熱的火 🔥",
+            event_id=event.id,
+        )
+        team = Team.create(session=session, create_obj=team_in)
 
     session.commit()
 
