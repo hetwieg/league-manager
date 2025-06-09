@@ -15,7 +15,7 @@ from app.models.apikey import (
     ApiKey,
     ApiKeyCreate,
     ApiKeyGenerate,
-    ApiKeyPublic,
+    ApiKeyCreatedPublic,
     ApiKeysPublic,
 )
 from app.models.base import ApiTags, Message, RowId
@@ -146,7 +146,7 @@ def read_apikey_me(
     return ApiKeysPublic(data=api_keys, count=count)
 
 
-@router.post("/me/api-key", response_model=ApiKeyPublic)
+@router.post("/me/api-key", response_model=ApiKeyCreatedPublic)
 def create_apikey_met(
     *, session: SessionDep, body: ApiKeyGenerate, current_user: CurrentUser
 ) -> Any:
@@ -167,7 +167,7 @@ def create_apikey_met(
     return api_key
 
 
-@router.delete("/me/api-key/{api_key}", response_model=ApiKeyPublic)
+@router.delete("/me/api-key/{api_key}", response_model=Message)
 def delete_apikey_me(
     *,
     session: SessionDep,
@@ -175,7 +175,7 @@ def delete_apikey_me(
     api_key: RowId,
 ) -> Message:
     """
-    Delete a api-key.
+    Delete an api-key.
     """
 
     for api_key in current_user.api_keys:
