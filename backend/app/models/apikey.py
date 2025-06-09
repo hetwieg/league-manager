@@ -51,15 +51,18 @@ class ApiKey(mixin.RowId, ApiKeyBase, table=True):
 
     @classmethod
     def create(cls, *, session: Session, create_obj: ApiKeyCreate) -> "ApiKey":
-        # TODO: User id
         data_obj = create_obj.model_dump(exclude_unset=True)
 
         # Generate new api key
         extra_data = {
             "api_key": ApiKey.generate(),
         }
-        while cls.authenticate(session=session, api_key=extra_data["api_key"]):
+        while True:
             extra_data["api_key"] = ApiKey.generate()
+            statement = select(cls).where(cls.api_key == extra_data["api_key"])
+            db_obj = session.exec(statement).first()
+            if not db_obj:
+                break
 
         db_obj = cls.model_validate(data_obj, update=extra_data)
         session.add(db_obj)
@@ -80,12 +83,14 @@ class ApiKey(mixin.RowId, ApiKeyBase, table=True):
 
     @classmethod
     def authenticate(cls, *, session: Session, api_key: str) -> "User | None":
-        statement = select(cls).where(cls.api_key == api_key and cls.is_active)
+        statement = select(cls).where(cls.api_key == api_key)
         db_obj = session.exec(statement).first()
 
         if not db_obj:
             return None
-        if not db_obj.user:
+        elif not db_obj.is_active:
+            return None
+        elif not db_obj.user:
             return None
         return db_obj.user
 
