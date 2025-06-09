@@ -46,3 +46,20 @@ def authentication_token_from_email(
         user = User.update(session=db, db_obj=user, in_obj=user_in_update)
 
     return user_authentication_headers(client=client, email=email, password=password)
+
+
+def authentication_token_from_user(
+    *, client: TestClient, user: User, db: Session
+) -> dict[str, str]:
+    """
+    Return a valid token for the user with given email.
+
+    If the user doesn't exist it is created first.
+    """
+    password = random_lower_string()
+    user_in_update = UserUpdate(password=password)
+    if not user.id:
+        raise Exception("User id not set")
+    user = User.update(session=db, db_obj=user, in_obj=user_in_update)
+
+    return user_authentication_headers(client=client, email=str(user.email), password=password)

@@ -4,7 +4,9 @@ from fastapi.testclient import TestClient
 from sqlmodel import Session
 
 from app.core.config import settings
+from app.models.user import PermissionRight
 from app.tests.utils.event import create_random_event
+from app.tests.utils.user import create_random_user, authentication_token_from_user
 
 
 def test_create_event(client: TestClient, superuser_token_headers: dict[str, str]) -> None:
@@ -169,10 +171,55 @@ def test_delete_event_not_enough_permissions(
     assert content["detail"] == "Not enough permissions"
 
 
+def test_delete_event_admin_user(
+    client: TestClient, db: Session
+) -> None:
+    event = create_random_event(db)
+    user = create_random_user(db)
+    event.add_user(user=user, rights=PermissionRight.ADMIN, session=db)
+
+    response = client.delete(
+        f"{settings.API_V1_STR}/events/{event.id}",
+        headers=authentication_token_from_user(db=db, user=user, client=client),
+    )
+    assert response.status_code == 200
+    content = response.json()
+    assert content["message"] == "Event deleted successfully"
+
+
+def test_delete_event_not_enough_permissions_for_this_event(
+    client: TestClient, db: Session
+) -> None:
+    event = create_random_event(db)
+    user = create_random_user(db)
+
+    response = client.delete(
+        f"{settings.API_V1_STR}/events/{event.id}",
+        headers=authentication_token_from_user(db=db, user=user, client=client),
+    )
+    assert response.status_code == 400
+    content = response.json()
+    assert content["detail"] == "Not enough permissions"
+
+
+def test_delete_event_event_user_read_only_rights(
+    client: TestClient, db: Session
+) -> None:
+    event = create_random_event(db)
+    user = create_random_user(db)
+    event.add_user(user=user, rights=PermissionRight.READ, session=db)
+
+    response = client.delete(
+        f"{settings.API_V1_STR}/events/{event.id}",
+        headers=authentication_token_from_user(db=db, user=user, client=client),
+    )
+    assert response.status_code == 400
+    content = response.json()
+    assert content["detail"] == "Not enough permissions"
+
+
 # TODO: Add user (super, less rights, own rights, more rights) (*** user without rights)
 # TODO: Edit user rights (super, less rights, own rights, more rights) (*** user without rights)
 # TODO: Remove user (*** user without rights)
 # TODO: Remove own user (is allowed)
 # TODO: Remove not linked user
-# TODO: Remove event when no rights
-# TODO: Remove event when READ rights
