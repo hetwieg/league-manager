@@ -54,7 +54,7 @@ class EmailUpdate(Email):
 
 
 class ScoutingId(BaseModel):
-    scouting_id: str | None = Field(default=None, max_length=32)
+    scouting_id: str | None = Field(default=None, max_length=32, description="Association registration number")
 
 
 class Password(BaseModel):

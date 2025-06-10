@@ -5,6 +5,9 @@ from app.models.event import (
     Event,
     EventCreate,
 )
+from app.models.association import (
+    Association,
+)
 from app.models.team import (
     Team,
     TeamCreate,

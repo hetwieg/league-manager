@@ -27,6 +27,7 @@ class PermissionModule(DocumentedStrEnum):
     USER = auto_enum()
     EVENT = auto_enum()
     TEAM = auto_enum()
+    ASSOCIATION = auto_enum()
 
 
 class PermissionPart(DocumentedStrEnum):
