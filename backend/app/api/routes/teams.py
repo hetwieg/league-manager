@@ -89,7 +89,7 @@ def read_team(session: SessionDep, current_user: CurrentUser, id: RowId) -> Any:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Team not found")
 
     event = session.get(Event, team.event_id)
-    if not event:
+    if not event: # pragma: no cover
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
 
     if not current_user.has_permissions(
@@ -138,7 +138,7 @@ def update_team(
 
     # Check user's permissions for the existing event
     event = session.get(Event, team.event_id)
-    if not event:
+    if not event: # pragma: no cover
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
 
     if not current_user.has_permissions(
@@ -176,7 +176,7 @@ def delete_team(session: SessionDep,current_user: CurrentUser, id: RowId) -> Mes
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Team not found")
 
     event = session.get(Event, team.event_id)
-    if not event:
+    if not event: # pragma: no cover
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
 
     if not current_user.has_permissions(

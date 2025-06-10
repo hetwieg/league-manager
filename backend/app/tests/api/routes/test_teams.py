@@ -56,6 +56,60 @@ def test_create_team_with_incorrect_event(client: TestClient, superuser_token_he
     assert response.status_code == status.HTTP_404_NOT_FOUND
     assert response.json()["detail"] == "Event not found"
 
+
+def test_create_team_with_normal_user(
+    client: TestClient, normal_user_token_headers: dict[str, str], db: Session,
+) -> None:
+    event = create_random_event(db)
+    data = {
+        "theme_name": "Normal user",
+        "event_id": str(event.id),
+    }
+    response = client.post(
+        f"{settings.API_V1_STR}/teams/",
+        headers=normal_user_token_headers,
+        json=data,
+    )
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert response.json()["detail"] == "Not enough permissions"
+
+
+def test_create_team_with_event_user(
+    client: TestClient, event_user_token_headers: EventUserHeader, db: Session,
+) -> None:
+    event = event_user_token_headers.event
+    data = {
+        "theme_name": "Event user",
+        "event_id": str(event.id),
+    }
+    response = client.post(
+        f"{settings.API_V1_STR}/teams/",
+        headers=event_user_token_headers.headers,
+        json=data,
+    )
+    assert response.status_code == status.HTTP_200_OK
+    content = response.json()
+    assert content["theme_name"] == data["theme_name"]
+    assert content["event_id"] == str(event.id)
+
+
+def test_create_team_for_event_user(
+    client: TestClient, event_user_token_headers: EventUserHeader, db: Session,
+) -> None:
+    event = create_random_event(db)
+    data = {
+        "theme_name": "Other event user",
+        "event_id": str(event.id),
+    }
+    response = client.post(
+        f"{settings.API_V1_STR}/teams/",
+        headers=event_user_token_headers.headers,
+        json=data,
+    )
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert response.json()["detail"] == "Not enough permissions"
+
+
 def test_read_team(client: TestClient, superuser_token_headers: dict[str, str], db: Session) -> None:
     team = create_random_team(db)
     response = client.get(
