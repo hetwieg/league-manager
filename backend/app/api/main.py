@@ -4,6 +4,7 @@ from app.api.routes import (
     events,
     teams,
     associations,
+    divisions,
     login,
     private,
     users,
@@ -20,6 +21,7 @@ api_router.include_router(utils.router)
 api_router.include_router(events.router)
 api_router.include_router(teams.router)
 api_router.include_router(associations.router)
+api_router.include_router(divisions.router)
 
 
 if settings.ENVIRONMENT == "local":

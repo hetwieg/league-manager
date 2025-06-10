@@ -2,50 +2,54 @@ from typing import TYPE_CHECKING
 
 from sqlmodel import (
     Session,
+    Field,
     Relationship,
 )
 
 from . import mixin
 from .base import (
     BaseSQLModel,
+    RowId,
 )
 
 if TYPE_CHECKING:
-    from .division import Division
+    from .association import Association
 
-# region # Association #########################################################
+# region # Divisions ###########################################################
 
 
-class AssociationBase(
+class DivisionBase(
     mixin.Name,
     mixin.Contact,
     mixin.ScoutingId,
     BaseSQLModel,
 ):
-    pass
+    association_id: RowId = Field(
+        foreign_key="association.id", nullable=False, ondelete="CASCADE"
+    )
 
 
 # Properties to receive via API on creation
-class AssociationCreate(AssociationBase):
+class DivisionCreate(DivisionBase):
     pass
 
 
 # Properties to receive via API on update, all are optional
-class AssociationUpdate(AssociationBase):
-    pass
+class DivisionUpdate(DivisionBase):
+    association_id: RowId | None = Field(default=None)
 
 
-class Association(mixin.RowId, AssociationBase, table=True):
+class Division(mixin.RowId, DivisionBase, table=True):
     # --- database only items --------------------------------------------------
 
     # --- read only items ------------------------------------------------------
 
     # --- back_populates links -------------------------------------------------
-    divisions: list["Division"] = Relationship(back_populates="association", cascade_delete=True)
+    association: "Association" = Relationship(back_populates="divisions")  # , cascade_delete=True)
 
     # --- CRUD actions ---------------------------------------------------------
     @classmethod
-    def create(cls, *, session: Session, create_obj: AssociationCreate) -> "Association":
+    def create(cls, *, session: Session, create_obj: DivisionCreate) -> "Division":
         data_obj = create_obj.model_dump(exclude_unset=True)
 
         db_obj = cls.model_validate(data_obj)
@@ -56,8 +60,8 @@ class Association(mixin.RowId, AssociationBase, table=True):
 
     @classmethod
     def update(
-        cls, *, session: Session, db_obj: "Association", in_obj: AssociationUpdate
-    ) -> "Association":
+        cls, *, session: Session, db_obj: "Division", in_obj: DivisionUpdate
+    ) -> "Division":
         data_obj = in_obj.model_dump(exclude_unset=True)
         db_obj.sqlmodel_update(data_obj)
         session.add(db_obj)
@@ -67,12 +71,12 @@ class Association(mixin.RowId, AssociationBase, table=True):
 
 
 # Properties to return via API, id is always required
-class AssociationPublic(mixin.RowIdPublic, AssociationBase):
-    pass
+class DivisionPublic(mixin.RowIdPublic, DivisionBase):
+    association_id: RowId
 
 
-class AssociationsPublic(BaseSQLModel):
-    data: list[AssociationPublic]
+class DivisionsPublic(BaseSQLModel):
+    data: list[DivisionPublic]
     count: int
 
 

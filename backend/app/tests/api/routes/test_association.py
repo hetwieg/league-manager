@@ -6,6 +6,7 @@ from sqlmodel import Session
 
 from app.core.config import settings
 from app.tests.utils.association import create_random_association
+from app.tests.utils.division import create_random_division
 
 
 def test_create_association(client: TestClient, superuser_token_headers: dict[str, str], db: Session) -> None:
@@ -178,6 +179,43 @@ def test_delete_association_no_permissions(client: TestClient, normal_user_token
     association = create_random_association(db)
     response = client.delete(
         f"{settings.API_V1_STR}/associations/{association.id}",
+        headers=normal_user_token_headers,
+    )
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert response.json()["detail"] == "Not enough permissions"
+
+
+def test_read_association_divisions(client: TestClient, superuser_token_headers: dict[str, str], db: Session) -> None:
+    association = create_random_association(db)
+    create_random_division(db, association=association)
+    create_random_division(db, association=association)
+    response = client.get(
+        f"{settings.API_V1_STR}/associations/{association.id}/divisions",
+        headers=superuser_token_headers,
+    )
+    assert response.status_code == status.HTTP_200_OK
+    content = response.json()
+    assert "count" in content
+    assert content["count"] == 2
+    assert "data" in content
+    assert isinstance(content["data"], list)
+    assert len(content["data"]) <= content["count"]
+
+
+def test_read_association_divisions_not_found(client: TestClient, superuser_token_headers: dict[str, str], db: Session) -> None:
+    response = client.get(
+        f"{settings.API_V1_STR}/associations/{uuid.uuid4()}/divisions",
+        headers=superuser_token_headers,
+    )
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert response.json()["detail"] == "Association not found"
+
+
+def test_read_association_divisions_no_permissions(client: TestClient, normal_user_token_headers: dict[str, str], db: Session) -> None:
+    association = create_random_association(db)
+    create_random_division(db, association=association)
+    response = client.get(
+        f"{settings.API_V1_STR}/associations/{association.id}/divisions",
         headers=normal_user_token_headers,
     )
     assert response.status_code == status.HTTP_403_FORBIDDEN

@@ -28,6 +28,7 @@ class PermissionModule(DocumentedStrEnum):
     EVENT = auto_enum()
     TEAM = auto_enum()
     ASSOCIATION = auto_enum()
+    DIVISION = auto_enum()
 
 
 class PermissionPart(DocumentedStrEnum):
@@ -43,8 +44,9 @@ class PermissionRight(DocumentedIntFlag):
 
     MANAGE_USERS = auto_enum()
     MANAGE_TEAMS = auto_enum()
+    MANAGE_DIVISIONS = auto_enum()
 
-    ADMIN = CREATE | READ | UPDATE | DELETE | MANAGE_USERS | MANAGE_TEAMS
+    ADMIN = CREATE | READ | UPDATE | DELETE | MANAGE_USERS | MANAGE_TEAMS | MANAGE_DIVISIONS
 
 
 # ##############################################################################

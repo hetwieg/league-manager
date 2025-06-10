@@ -16,6 +16,10 @@ from app.models.association import (
     AssociationPublic,
     AssociationsPublic,
 )
+from app.models.division import (
+    Division,
+    DivisionsPublic,
+)
 from app.models.user import (
     PermissionModule,
     PermissionPart,
@@ -128,5 +132,45 @@ def delete_association(session: SessionDep,current_user: CurrentUser, id: RowId)
     session.delete(association)
     session.commit()
     return Message(message="Association deleted successfully")
+
+# endregion
+
+
+# region # Associations / Divisions ############################################
+
+
+@router.get("/{associations_id}/divisions/", response_model=DivisionsPublic)
+def read_association_division(
+    session: SessionDep, current_user: CurrentUser, associations_id: RowId, skip: int = 0, limit: int = 100
+) -> Any:
+    """
+    Retrieve all association divisions.
+    """
+
+    association = session.get(Association, associations_id)
+    if not association:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Association not found")
+
+    if not current_user.has_permission(
+        module=PermissionModule.ASSOCIATION,
+        part=PermissionPart.ADMIN,
+        rights=(PermissionRight.MANAGE_DIVISIONS | PermissionRight.READ),
+    ):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions")
+
+    count_statement = (select(func.count())
+                       .select_from(Division)
+                       .where(Division.association_id == association.id)
+                       )
+    count = session.exec(count_statement).one()
+    statement = (select(Division)
+                 .where(Division.association_id == association.id)
+                 .offset(skip)
+                 .limit(limit)
+                 )
+    divisions = session.exec(statement).all()
+
+    return DivisionsPublic(data=divisions, count=count)
+
 
 # endregion

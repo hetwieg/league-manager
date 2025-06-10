@@ -57,6 +57,7 @@ class ApiTags(DocumentedStrEnum):
     EVENTS = "Events"
     TEAMS = "Teams"
     ASSOCIATIONS = "Associations"
+    DIVISIONS = "Divisions"
 
 
 # endregion

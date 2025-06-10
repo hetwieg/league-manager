@@ -8,6 +8,9 @@ from app.models.event import (
 from app.models.association import (
     Association,
 )
+from app.models.division import (
+    Division,
+)
 from app.models.team import (
     Team,
     TeamCreate,
