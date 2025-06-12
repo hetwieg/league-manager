@@ -102,7 +102,7 @@ class Event(mixin.RowId, EventBase, table=True):
 
     # --- many-to-many links ---------------------------------------------------
     user_links: list["EventUserLink"] = Relationship(back_populates="event", cascade_delete=True)
-    team_links: list["Team"] = Relationship(back_populates="event", cascade_delete=True)
+    teams: list["Team"] = Relationship(back_populates="event", cascade_delete=True)
 
     # --- CRUD actions ---------------------------------------------------------
     @classmethod

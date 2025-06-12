@@ -25,6 +25,12 @@ from app.models.user import (
     PermissionPart,
     PermissionRight,
 )
+from app.models.division import (
+    DivisionTeamLink,
+    DivisionTeamLinkCreate,
+    DivisionTeamLinkUpdate,
+    DivisionTeamLinkPublic,
+)
 
 router = APIRouter(prefix="/teams", tags=[ApiTags.TEAMS])
 
@@ -189,5 +195,115 @@ def delete_team(session: SessionDep,current_user: CurrentUser, id: RowId) -> Mes
     session.delete(team)
     session.commit()
     return Message(message="Team deleted successfully")
+
+# endregion
+
+
+# region # Teams / Division ####################################################
+
+@router.get("/{id}/division", response_model=DivisionTeamLinkPublic, tags=[ApiTags.DIVISIONS])
+def read_team_divisions(session: SessionDep, current_user: CurrentUser, id: RowId) -> Any:
+    """
+    Get division from team by ID.
+    """
+    team = session.get(Team, id)
+    if not team:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Team not found")
+
+    event = session.get(Event, team.event_id)
+    if not event: # pragma: no cover
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+
+    if not current_user.has_permissions(
+            module=PermissionModule.TEAM,
+            part=PermissionPart.ADMIN,
+            rights=PermissionRight.MANAGE_DIVISIONS,
+    ) and not (event.user_has_rights(user=current_user, rights=PermissionRight.MANAGE_DIVISIONS)):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions")
+
+    return team.division_link
+
+
+@router.post("/{id}/division", response_model=DivisionTeamLinkPublic, tags=[ApiTags.DIVISIONS])
+def create_team_division_link(
+    *, session: SessionDep, current_user: CurrentUser, team_in: DivisionTeamLinkCreate, id: RowId
+) -> Any:
+    """
+    Create new division link in team.
+    """
+
+    team = session.get(Team, id)
+    if not team:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Team not found")
+
+    if team.division_link:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Team already linked to division")
+
+    event = session.get(Event, team.event_id)
+    if not event: # pragma: no cover
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+
+    if not current_user.has_permissions(
+        module=PermissionModule.TEAM,
+        part=PermissionPart.ADMIN,
+        rights=PermissionRight.MANAGE_DIVISIONS,
+    ) and not (event.user_has_rights(user=current_user, rights=PermissionRight.MANAGE_DIVISIONS)):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions")
+
+    division_team_link = DivisionTeamLink.create(create_obj=team_in, session=session, team=team)
+    return division_team_link
+
+
+@router.put("/{id}/division", response_model=DivisionTeamLinkPublic, tags=[ApiTags.DIVISIONS])
+def update_team_division_link(
+    *, session: SessionDep, current_user: CurrentUser, id: RowId, team_in: DivisionTeamLinkUpdate
+) -> Any:
+    """
+    Update division info inside team.
+    """
+    team = session.get(Team, id)
+    if not team:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Team not found")
+
+    # Check user's permissions for the existing event
+    event = session.get(Event, team.event_id)
+    if not event: # pragma: no cover
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+
+    if not current_user.has_permissions(
+        module=PermissionModule.TEAM,
+        part=PermissionPart.ADMIN,
+        rights=PermissionRight.MANAGE_DIVISIONS,
+    ) and not (event.user_has_rights(user=current_user, rights=PermissionRight.MANAGE_DIVISIONS)):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions")
+
+    # Update the team
+    division_team_link = DivisionTeamLink.update(db_obj=team.division_link, in_obj=team_in, session=session)
+    return division_team_link
+
+
+@router.delete("/{id}/division", tags=[ApiTags.DIVISIONS])
+def delete_team_division_link(session: SessionDep, current_user: CurrentUser, id: RowId) -> Message:
+    """
+    Delete a division link from a team.
+    """
+    team = session.get(Team, id)
+    if not team:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Team not found")
+
+    event = session.get(Event, team.event_id)
+    if not event: # pragma: no cover
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+
+    if not current_user.has_permissions(
+        module=PermissionModule.TEAM,
+        part=PermissionPart.ADMIN,
+        rights=PermissionRight.MANAGE_DIVISIONS,
+    ) and not (event.user_has_rights(user=current_user, rights=PermissionRight.MANAGE_DIVISIONS)):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions")
+
+    session.delete(team.division_link)
+    session.commit()
+    return Message(message="Division deleted from team successfully")
 
 # endregion

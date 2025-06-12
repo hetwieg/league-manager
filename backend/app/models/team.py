@@ -14,6 +14,7 @@ from .base import (
 
 if TYPE_CHECKING:
     from .event import Event
+    from .division import DivisionTeamLink
 
 # region # Team ################################################################
 
@@ -28,9 +29,6 @@ class TeamBase(
     event_id: RowId = Field(
         foreign_key="event.id", nullable=False, ondelete="CASCADE"
     )
-    # scouting_team_id: RowId | None = Field(
-    #     foreign_key="ScoutingTeam.id", nullable=False, ondelete="CASCADE"
-    # )
 
 
 # Properties to receive via API on creation
@@ -49,8 +47,8 @@ class Team(mixin.RowId, TeamBase, table=True):
     # --- read only items ------------------------------------------------------
 
     # --- back_populates links -------------------------------------------------
-    event: "Event" = Relationship(back_populates="team_links")#, cascade_delete=True)
-    # team: "ScoutingTeam" = Relationship(back_populates="event_links", cascade_delete=True)
+    event: "Event" = Relationship(back_populates="teams")
+    division_link: "DivisionTeamLink" = Relationship(back_populates="team", cascade_delete=True)
 
     # --- CRUD actions ---------------------------------------------------------
     @classmethod
