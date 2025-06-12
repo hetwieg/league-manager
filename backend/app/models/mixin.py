@@ -25,6 +25,14 @@ class ThemeNameUpdate(ThemeName):
     theme_name: str | None = Field(default=None, max_length=255)
 
 
+class ShortName(BaseModel):
+    short_name: str = Field(index=True, max_length=8)
+
+
+class ShortNameUpdate(ShortName):
+    short_name: str | None = Field(default=None, max_length=8)
+
+
 class Contact(BaseModel):
     contact: str | None = Field(default=None, nullable=True, max_length=255)
 

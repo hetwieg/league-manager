@@ -17,6 +17,7 @@ def test_create_team(client: TestClient, superuser_token_headers: dict[str, str]
     event = create_random_event(db)
     data = {
         "theme_name": "Foo",
+        "short_name": "1",
         "event_id": str(event.id),
     }
     response = client.post(
@@ -27,12 +28,14 @@ def test_create_team(client: TestClient, superuser_token_headers: dict[str, str]
     assert response.status_code == status.HTTP_200_OK
     content = response.json()
     assert content["theme_name"] == data["theme_name"]
+    assert content["short_name"] == data["short_name"]
     assert content["event_id"] == str(event.id)
     assert "id" in content
 
 def test_create_team_without_event(client: TestClient, superuser_token_headers: dict[str, str]) -> None:
     data = {
         "theme_name": "No Event Team",
+        "short_name": "2",
     }
     response = client.post(
         f"{settings.API_V1_STR}/teams/",
@@ -46,6 +49,7 @@ def test_create_team_without_event(client: TestClient, superuser_token_headers: 
 def test_create_team_with_incorrect_event(client: TestClient, superuser_token_headers: dict[str, str]) -> None:
     data = {
         "theme_name": "No Event Team",
+        "short_name": "3",
         "event_id": str(uuid.uuid4()),  # Non-existent event
     }
     response = client.post(
@@ -63,6 +67,7 @@ def test_create_team_with_normal_user(
     event = create_random_event(db)
     data = {
         "theme_name": "Normal user",
+        "short_name": "4",
         "event_id": str(event.id),
     }
     response = client.post(
@@ -80,6 +85,7 @@ def test_create_team_with_event_user(
     event = event_user_token_headers.event
     data = {
         "theme_name": "Event user",
+        "short_name": "5",
         "event_id": str(event.id),
     }
     response = client.post(
@@ -90,6 +96,7 @@ def test_create_team_with_event_user(
     assert response.status_code == status.HTTP_200_OK
     content = response.json()
     assert content["theme_name"] == data["theme_name"]
+    assert content["short_name"] == data["short_name"]
     assert content["event_id"] == str(event.id)
 
 
@@ -99,6 +106,7 @@ def test_create_team_for_event_user(
     event = create_random_event(db)
     data = {
         "theme_name": "Other event user",
+        "short_name": "6",
         "event_id": str(event.id),
     }
     response = client.post(
@@ -120,6 +128,7 @@ def test_read_team(client: TestClient, superuser_token_headers: dict[str, str], 
     content = response.json()
     assert content["id"] == str(team.id)
     assert content["theme_name"] == team.theme_name
+    assert content["short_name"] == team.short_name
     assert content["event_id"] == str(team.event_id)
 
 def test_read_team_not_found(client: TestClient, superuser_token_headers: dict[str, str]) -> None:
@@ -153,6 +162,7 @@ def test_read_team_with_event_user(client: TestClient, event_user_token_headers:
     content = response.json()
     assert content["id"] == str(team.id)
     assert content["theme_name"] == team.theme_name
+    assert content["short_name"] == team.short_name
     assert content["event_id"] == str(event_user_token_headers.event.id)
 
 
@@ -230,7 +240,10 @@ def test_read_teams_with_event_user_team_manager(client: TestClient, db: Session
 
 def test_update_team_name(client: TestClient, superuser_token_headers: dict[str, str], db: Session) -> None:
     team = create_random_team(db)
-    data = {"theme_name": "Updated Team Name"}
+    data = {
+        "theme_name": "Updated Team Name",
+        "short_name": "7",
+    }
     response = client.put(
         f"{settings.API_V1_STR}/teams/{team.id}",
         headers=superuser_token_headers,
@@ -240,11 +253,15 @@ def test_update_team_name(client: TestClient, superuser_token_headers: dict[str,
     content = response.json()
     assert content["id"] == str(team.id)
     assert content["theme_name"] == data["theme_name"]
+    assert content["short_name"] == data["short_name"]
     assert content["event_id"] == str(team.event_id)
 
 
 def test_update_team_not_found(client: TestClient, superuser_token_headers: dict[str, str]) -> None:
-    data = {"theme_name": "Non-existent team"}
+    data = {
+        "theme_name": "Non-existent team",
+        "short_name": "8",
+    }
     response = client.put(
         f"{settings.API_V1_STR}/teams/{uuid.uuid4()}",
         headers=superuser_token_headers,
@@ -256,7 +273,10 @@ def test_update_team_not_found(client: TestClient, superuser_token_headers: dict
 
 def test_update_team_not_enough_permissions(client: TestClient, normal_user_token_headers: dict[str, str], db: Session) -> None:
     team = create_random_team(db)
-    data = {"theme_name": "Not enough permissions team"}
+    data = {
+        "theme_name": "Not enough permissions team",
+        "short_name": "9",
+    }
     response = client.put(
         f"{settings.API_V1_STR}/teams/{team.id}",
         headers=normal_user_token_headers,
@@ -268,7 +288,10 @@ def test_update_team_not_enough_permissions(client: TestClient, normal_user_toke
 
 def test_update_team_name_with_event_permissions(client: TestClient, event_user_token_headers: EventUserHeader, db: Session) -> None:
     team = create_random_team(db, event=event_user_token_headers.event)
-    data = {"theme_name": "Updated Team Name with Event permissions"}
+    data = {
+        "theme_name": "Updated Team Name with Event permissions",
+        "short_name": "10",
+    }
     response = client.put(
         f"{settings.API_V1_STR}/teams/{team.id}",
         headers=event_user_token_headers.headers,
@@ -278,6 +301,7 @@ def test_update_team_name_with_event_permissions(client: TestClient, event_user_
     content = response.json()
     assert content["id"] == str(team.id)
     assert content["theme_name"] == data["theme_name"]
+    assert content["short_name"] == data["short_name"]
     assert content["event_id"] == str(event_user_token_headers.event.id)
 
 
@@ -328,6 +352,7 @@ def test_update_team_event_with_event_user(client: TestClient, event_user_token_
     content = response.json()
     assert content["id"] == str(team.id)
     assert content["theme_name"] == team.theme_name
+    assert content["short_name"] == team.short_name
     assert content["event_id"] == str(new_event.id)
 
 

@@ -135,6 +135,7 @@ def init_db(session: Session) -> None:
     if not team:
         team_in = TeamCreate(
             theme_name="Laaiend vuur 熾熱的火 🔥",
+            short_name="1",
             event_id=event.id,
         )
         team = Team.create(session=session, create_obj=team_in)

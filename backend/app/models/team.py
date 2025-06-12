@@ -20,6 +20,7 @@ if TYPE_CHECKING:
 
 class TeamBase(
     mixin.ThemeName,
+    mixin.ShortName,
     mixin.CheckInCheckOut,
     mixin.Canceled,
     BaseSQLModel
@@ -38,7 +39,7 @@ class TeamCreate(TeamBase):
 
 
 # Properties to receive via API on update, all are optional
-class TeamUpdate(mixin.ThemeNameUpdate, TeamBase):
+class TeamUpdate(mixin.ThemeNameUpdate, mixin.ShortNameUpdate, TeamBase):
     event_id: RowId | None = Field(default=None)
 
 
